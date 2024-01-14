@@ -75,8 +75,14 @@ func SyncDropbox() error {
 			return err
 		}
 
-		reader := strings.NewReader(string(jsonData))
+		deleteArg := files.NewDeleteArg("/.todo-projects.json")
+		_, err = dbx.DeleteV2(deleteArg)
+		if err != nil {
+			fmt.Println("Error deleting file:", err)
+			return err
+		}
 
+		reader := strings.NewReader(string(jsonData))
 		uploadArg := files.NewUploadArg("/.todo-projects.json")
 		_, err = dbx.Upload(uploadArg, reader)
 		if err != nil {
