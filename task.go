@@ -21,6 +21,7 @@ type Task struct {
 	IsCompleted   bool          `json:"is_completed"`
 	TaskHistories []TaskHistory `json:"task_histories"`
 	ParentTaskID  string        `json:"parent_task_id"`
+	IsJIRATask    bool          `json:"is_jira_task"`
 }
 
 type Tasks []Task

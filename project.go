@@ -9,12 +9,20 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
+type JIRAConfig struct {
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Token    string `json:"token"`
+	JQL      string `json:"jql"`
+}
+
 type Project struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	IsSelected  bool   `json:"is_selected"`
-	Tasks       Tasks  `json:"tasks"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	IsSelected  bool       `json:"is_selected"`
+	Tasks       Tasks      `json:"tasks"`
+	JIRA        JIRAConfig `json:"jira"`
 }
 
 type Projects []Project
@@ -193,4 +201,60 @@ func projectSelectTemplate() *promptui.SelectTemplates {
 		Selected: `{{ "✔" | green }} {{ "Selected" | bold }}: {{ .Name | cyan }}`,
 		Details:  `{{ "Description:" }} {{ .Description }}`,
 	}
+}
+
+func ProjectSetting() error {
+	projects := Projects{}
+	if err := projects.load(); err != nil {
+		return err
+	}
+
+	selectedIndex := projects.getSelectedIndex()
+	if selectedIndex == -1 {
+		fmt.Println("No project selected")
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label: "JIRA URL",
+	}
+
+	jiraURL, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Error getting jira url:", err)
+		return err
+	}
+
+	prompt = promptui.Prompt{
+		Label: "JIRA Username",
+	}
+
+	jiraUsername, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Error getting jira username:", err)
+		return err
+	}
+
+	prompt = promptui.Prompt{
+		Label: "JIRA Token",
+		Mask:  '*',
+	}
+
+	jiraToken, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Error getting jira token:", err)
+		return err
+	}
+
+	projects[selectedIndex].JIRA.URL = jiraURL
+	projects[selectedIndex].JIRA.Username = jiraUsername
+	projects[selectedIndex].JIRA.Token = jiraToken
+	projects[selectedIndex].JIRA.JQL = "assignee = currentUser() AND resolution = Unresolved"
+	if err := projects.save(); err != nil {
+		return err
+	}
+
+	fmt.Println("Successfully updated project:", projects[selectedIndex].Name)
+
+	return nil
 }
