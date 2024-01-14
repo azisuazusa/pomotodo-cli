@@ -126,6 +126,17 @@ func TaskComplete() error {
 	}
 
 	projects[projectIndex].Tasks[i].IsCompleted = true
+	if projects[projectIndex].Tasks[i].IsStarted {
+		projects[projectIndex].Tasks[i].IsStarted = false
+		projects[projectIndex].Tasks[i].TaskHistories[len(projects[projectIndex].Tasks[i].TaskHistories)-1].StoppedAt = time.Now()
+	}
+
+	if projects[projectIndex].JIRA.URL != "" && projects[projectIndex].Tasks[i].IsJIRATask {
+		err = AddWorklogToJIRAIssue(projects[projectIndex].Tasks[i])
+		if err != nil {
+			fmt.Println("Failed to add worklog to JIRA issue:", err)
+		}
+	}
 	if err := projects.save(); err != nil {
 		return err
 	}

@@ -138,6 +138,40 @@ func createApp() *cli.App {
 							return ProjectSelect()
 						},
 					},
+					{
+						Name:  "jira-setting",
+						Usage: "Set Jira settings",
+						Action: func(c *cli.Context) error {
+							return JIRASetting()
+						},
+					},
+					{
+						Name:  "dropbox-setting",
+						Usage: "Set Dropbox settings",
+						Action: func(c *cli.Context) error {
+							return DropboxSetting()
+						},
+					},
+					{
+						Name:  "sync",
+						Usage: "Syncronize tasks with 3rd party services",
+						Subcommands: []*cli.Command{
+							{
+								Name:  "jira",
+								Usage: "Syncronize tasks with Jira",
+								Action: func(c *cli.Context) error {
+									return SyncJIRAIssues()
+								},
+							},
+							{
+								Name:  "dropbox",
+								Usage: "Syncronize tasks with Dropbox",
+								Action: func(c *cli.Context) error {
+									return SyncDropbox()
+								},
+							},
+						},
+					},
 				},
 			},
 		},

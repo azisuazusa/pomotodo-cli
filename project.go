@@ -16,13 +16,18 @@ type JIRAConfig struct {
 	JQL      string `json:"jql"`
 }
 
+type DropboxConfig struct {
+	AccessToken string `json:"access_token"`
+}
+
 type Project struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	IsSelected  bool       `json:"is_selected"`
-	Tasks       Tasks      `json:"tasks"`
-	JIRA        JIRAConfig `json:"jira"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	IsSelected  bool          `json:"is_selected"`
+	Tasks       Tasks         `json:"tasks"`
+	JIRA        JIRAConfig    `json:"jira"`
+	Dropbox     DropboxConfig `json:"dropbox"`
 }
 
 type Projects []Project
@@ -203,7 +208,7 @@ func projectSelectTemplate() *promptui.SelectTemplates {
 	}
 }
 
-func ProjectSetting() error {
+func JIRASetting() error {
 	projects := Projects{}
 	if err := projects.load(); err != nil {
 		return err
@@ -250,6 +255,38 @@ func ProjectSetting() error {
 	projects[selectedIndex].JIRA.Username = jiraUsername
 	projects[selectedIndex].JIRA.Token = jiraToken
 	projects[selectedIndex].JIRA.JQL = "assignee = currentUser() AND resolution = Unresolved"
+	if err := projects.save(); err != nil {
+		return err
+	}
+
+	fmt.Println("Successfully updated project:", projects[selectedIndex].Name)
+
+	return nil
+}
+
+func DropboxSetting() error {
+	projects := Projects{}
+	if err := projects.load(); err != nil {
+		return err
+	}
+
+	selectedIndex := projects.getSelectedIndex()
+	if selectedIndex == -1 {
+		fmt.Println("No project selected")
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label: "Dropbox Token",
+	}
+
+	dropboxToken, err := prompt.Run()
+	if err != nil {
+		fmt.Println("Error getting dropbox token:", err)
+		return err
+	}
+
+	projects[selectedIndex].Dropbox.AccessToken = dropboxToken
 	if err := projects.save(); err != nil {
 		return err
 	}
