@@ -165,7 +165,11 @@ func TaskList() error {
 			fmt.Printf("   - %s\n", task.Name)
 			continue
 		}
-		fmt.Printf("%d. %s\n", taskNumber, task.Name)
+		fmt.Printf("%d. %s", taskNumber, task.Name)
+		if task.IsJIRATask {
+			fmt.Printf(" (%s)", task.ID)
+		}
+		fmt.Println()
 		taskNumber++
 	}
 
@@ -213,9 +217,9 @@ func (t *Tasks) remove(index int) {
 
 func taskSelectTemplate() *promptui.SelectTemplates {
 	return &promptui.SelectTemplates{
-		Active:   `{{ if .ParentTaskID }}  ▸ {{ .Name | cyan }}{{ else }}▸ {{ .Name | cyan }}{{ end }}`,
-		Inactive: `{{ if .ParentTaskID }}  ▸ {{ .Name }}{{ else }}▸ {{ .Name }}{{ end }}`,
-		Selected: `{{ "✔" | green }} {{ "Selected" | bold }}: {{ .Name | cyan }}`,
+		Active:   `{{ if .ParentTaskID }}  ▸ {{ .Name | cyan }}{{ else }}▸ {{ .Name | cyan }}{{ end }}{{ if .IsJIRATask }} ({{ .ID }}){{ end }}`,
+		Inactive: `{{ if .ParentTaskID }}  ▸ {{ .Name }}{{ else }}▸ {{ .Name }}{{ end }}{{ if .IsJIRATask }} ({{ .ID }}){{ end }}`,
+		Selected: `{{ "✔" | green }} {{ "Selected" | bold }}: {{ .Name | cyan }}{{ if .IsJIRATask }} ({{ .ID }}){{ end }}`,
 		Details:  `{{ "Description:" }} {{ .Description }}`,
 	}
 }

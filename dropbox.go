@@ -24,7 +24,7 @@ func SyncDropbox() error {
 	}
 
 	dbx := files.New(dropboxCfg)
-	downloadArg := files.NewDownloadArg("/todo-cli/.todo-projects.json")
+	downloadArg := files.NewDownloadArg("/.todo-projects.json")
 	_, content, err := dbx.Download(downloadArg)
 	if err != nil {
 		fmt.Println("Error downloading file:", err)
@@ -77,7 +77,7 @@ func SyncDropbox() error {
 
 		reader := strings.NewReader(string(jsonData))
 
-		uploadArg := files.NewUploadArg("/todo-cli/.todo-projects.json")
+		uploadArg := files.NewUploadArg("/.todo-projects.json")
 		_, err = dbx.Upload(uploadArg, reader)
 		if err != nil {
 			fmt.Println("Error uploading file:", err)
