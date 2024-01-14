@@ -36,6 +36,16 @@ func (t *Tasks) getIndexByID(id string) int {
 	return -1
 }
 
+func (t *Tasks) getStartedTaskIndex() int {
+	for i, task := range *t {
+		if task.IsStarted {
+			return i
+		}
+	}
+
+	return -1
+}
+
 func (t *Task) Add() error {
 	projects := Projects{}
 	if err := projects.load(); err != nil {
@@ -131,17 +141,41 @@ func TaskComplete() error {
 		projects[projectIndex].Tasks[i].TaskHistories[len(projects[projectIndex].Tasks[i].TaskHistories)-1].StoppedAt = time.Now()
 	}
 
-	if projects[projectIndex].JIRA.URL != "" && projects[projectIndex].Tasks[i].IsJIRATask {
-		err = AddWorklogToJIRAIssue(projects[projectIndex].Tasks[i])
+	project := projects[projectIndex]
+	if project.JIRA.URL == "" {
+		if err = projects.save(); err != nil {
+			return err
+		}
+
+		fmt.Println("Successfully completed task:", projects[projectIndex].Tasks[i].Name)
+		return nil
+	}
+
+	taskID := ""
+	task := project.Tasks[i]
+	if task.IsJIRATask {
+		taskID = task.ID
+	}
+
+	if task.ParentTaskID != "" {
+		parentTask := project.Tasks[project.Tasks.getIndexByID(project.Tasks[i].ParentTaskID)]
+		if parentTask.IsJIRATask {
+			taskID = parentTask.ID
+		}
+	}
+
+	if taskID != "" {
+		err = AddWorklogToJIRAIssue(taskID, task.Name, task.TaskHistories)
 		if err != nil {
 			fmt.Println("Failed to add worklog to JIRA issue:", err)
 		}
 	}
-	if err := projects.save(); err != nil {
+
+	if err = projects.save(); err != nil {
 		return err
 	}
 
-	fmt.Println("Successfully completed task:", projects[projectIndex].Tasks[i].Name)
+	fmt.Println("Successfully completed task:", task.Name)
 
 	return nil
 }
@@ -273,18 +307,7 @@ func TaskStop() error {
 		return nil
 	}
 
-	prompt := promptui.Select{
-		Label:     "Select a task to stop",
-		Items:     projects[projectIndex].Tasks,
-		Templates: taskSelectTemplate(),
-	}
-
-	i, _, err := prompt.Run()
-	if err != nil {
-		fmt.Println("Prompt failed:", err)
-		return err
-	}
-
+	i := projects[projectIndex].Tasks.getStartedTaskIndex()
 	projects[projectIndex].Tasks[i].IsStarted = false
 	projects[projectIndex].Tasks[i].TaskHistories[len(projects[projectIndex].Tasks[i].TaskHistories)-1].StoppedAt = time.Now()
 	if err := projects.save(); err != nil {

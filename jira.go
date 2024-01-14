@@ -23,7 +23,7 @@ func initJIRAClient(project Project) (client *jira.Client, err error) {
 	return
 }
 
-func AddWorklogToJIRAIssue(task Task) (err error) {
+func AddWorklogToJIRAIssue(taskID, taskName string, taskHistories []TaskHistory) (err error) {
 	projects := Projects{}
 	if err = projects.load(); err != nil {
 		return
@@ -37,13 +37,13 @@ func AddWorklogToJIRAIssue(task Task) (err error) {
 	}
 
 	var timeSpent time.Duration
-	for _, history := range task.TaskHistories {
+	for _, history := range taskHistories {
 		timeSpent += history.StoppedAt.Sub(history.StartedAt)
 	}
 
 	prompt := promptui.Prompt{
 		Label:     "Add worklog to JIRA issue, time spent in hours",
-		Default:   fmt.Sprintf("%.0f", timeSpent.Hours()),
+		Default:   fmt.Sprint(timeSpent),
 		AllowEdit: true,
 	}
 
@@ -53,8 +53,8 @@ func AddWorklogToJIRAIssue(task Task) (err error) {
 		return
 	}
 
-	if result != fmt.Sprintf("%.0f", timeSpent.Hours()) {
-		timeSpent, err = time.ParseDuration(fmt.Sprintf("%sh", result))
+	if result != fmt.Sprint(timeSpent) {
+		timeSpent, err = time.ParseDuration(result)
 		if err != nil {
 			fmt.Println("Error adding worklog to JIRA issue: ", err)
 			return
@@ -63,10 +63,10 @@ func AddWorklogToJIRAIssue(task Task) (err error) {
 
 	worklog := jira.WorklogRecord{
 		TimeSpentSeconds: int(timeSpent.Seconds()),
-		Comment:          task.Name,
+		Comment:          taskName,
 	}
 
-	_, _, err = client.Issue.AddWorklogRecord(task.ID, &worklog)
+	_, _, err = client.Issue.AddWorklogRecord(taskID, &worklog)
 	if err != nil {
 		fmt.Println("Error adding worklog to JIRA issue: ", err)
 		return
