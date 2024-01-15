@@ -46,6 +46,17 @@ func (t *Tasks) getStartedTaskIndex() int {
 	return -1
 }
 
+func (t *Tasks) filterCompletedTasks() {
+	filteredTasks := Tasks{}
+	for _, task := range *t {
+		if !task.IsCompleted {
+			filteredTasks = append(filteredTasks, task)
+		}
+	}
+
+	*t = filteredTasks
+}
+
 func (t *Task) Add() error {
 	projects := Projects{}
 	if err := projects.load(); err != nil {
@@ -194,6 +205,7 @@ func TaskList() error {
 
 	fmt.Println("Tasks for project:", projects[projectIndex].Name)
 	taskNumber := 1
+	projects[projectIndex].Tasks.filterCompletedTasks()
 	for _, task := range projects[projectIndex].Tasks {
 		if task.ParentTaskID != "" {
 			fmt.Printf("   - %s\n", task.Name)
@@ -222,6 +234,7 @@ func TaskRemove() error {
 		return nil
 	}
 
+	projects[projectIndex].Tasks.filterCompletedTasks()
 	prompt := promptui.Select{
 		Label:     "Select a task to remove",
 		Items:     projects[projectIndex].Tasks,
@@ -270,6 +283,7 @@ func TaskStart() error {
 		return nil
 	}
 
+	projects[projectIndex].Tasks.filterCompletedTasks()
 	prompt := promptui.Select{
 		Label:     "Select a task to start",
 		Items:     projects[projectIndex].Tasks,
