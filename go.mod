@@ -13,6 +13,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.19 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/raphamorim/go-rainbow v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
