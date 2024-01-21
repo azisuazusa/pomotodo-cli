@@ -18,10 +18,10 @@ func settingCLI(presenter *setting.Presenter) *cli.Command {
 				},
 			},
 			{
-				Name:  "set-integration",
+				Name:  "sync-integration",
 				Usage: "Manage integrations",
 				Action: func(c *cli.Context) error {
-					return presenter.SetIntegration(c.Context)
+					return presenter.SetSyncIntegration(c.Context)
 				},
 			},
 		},

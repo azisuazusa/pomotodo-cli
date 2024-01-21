@@ -77,8 +77,8 @@ func (ri *RepoImpl) Insert(ctx context.Context, taskEntity entity.Task) error {
 		return fmt.Errorf("failed to create task model: %w", err)
 	}
 
-	query := `INSERT INTO tasks (project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?)`
-	_, err = ri.db.ExecContext(ctx, query, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration)
+	query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err = ri.db.ExecContext(ctx, query, task.ID, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration)
 	if err != nil {
 		return fmt.Errorf("failed to insert task: %w", err)
 	}

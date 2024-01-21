@@ -1,4 +1,4 @@
-package setting
+package syncintegration
 
 import (
 	"context"
@@ -6,25 +6,25 @@ import (
 )
 
 type UseCase interface {
-	SetIntegration(ctx context.Context, integration Integration) error
+	SetSyncIntegration(ctx context.Context, integration SyncIntegration) error
 	Upload(ctx context.Context) error
 	Download(ctx context.Context) error
 }
 
 type useCase struct {
 	settingRepo     SettingRepository
-	integrationRepo map[IntegrationType]IntegrationRepository
+	integrationRepo map[SyncIntegrationType]IntegrationRepository
 }
 
-func New(settingRepo SettingRepository, integrationRepo map[IntegrationType]IntegrationRepository) UseCase {
+func New(settingRepo SettingRepository, integrationRepo map[SyncIntegrationType]IntegrationRepository) UseCase {
 	return &useCase{
 		settingRepo:     settingRepo,
 		integrationRepo: integrationRepo,
 	}
 }
 
-func (u *useCase) SetIntegration(ctx context.Context, integration Integration) error {
-	err := u.settingRepo.SetIntegration(ctx, integration)
+func (u *useCase) SetSyncIntegration(ctx context.Context, integration SyncIntegration) error {
+	err := u.settingRepo.SetSyncIntegration(ctx, integration)
 	if err != nil {
 		return fmt.Errorf("error while setting dropbox token: %w", err)
 	}
@@ -33,9 +33,14 @@ func (u *useCase) SetIntegration(ctx context.Context, integration Integration) e
 }
 
 func (u *useCase) Upload(ctx context.Context) error {
-	integration, err := u.settingRepo.GetIntegration(ctx)
-	if err != nil {
+	integration, err := u.settingRepo.GetSyncIntegration(ctx)
+	if err != nil && err != ErrSyncIntegrationNotFound {
 		return fmt.Errorf("error while getting integration: %w", err)
+	}
+
+	if err == ErrSyncIntegrationNotFound {
+		fmt.Println("Integration not found, skipping upload")
+		return nil
 	}
 
 	if err = u.integrationRepo[integration.Type].Upload(ctx, integration); err != nil {
@@ -46,9 +51,14 @@ func (u *useCase) Upload(ctx context.Context) error {
 }
 
 func (u *useCase) Download(ctx context.Context) error {
-	integration, err := u.settingRepo.GetIntegration(ctx)
-	if err != nil {
+	integration, err := u.settingRepo.GetSyncIntegration(ctx)
+	if err != nil && err != ErrSyncIntegrationNotFound {
 		return fmt.Errorf("error while getting integration: %w", err)
+	}
+
+	if err == ErrSyncIntegrationNotFound {
+		fmt.Println("Integration not found, skipping download")
+		return nil
 	}
 
 	if err = u.integrationRepo[integration.Type].Download(ctx, integration); err != nil {

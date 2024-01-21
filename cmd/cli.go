@@ -6,7 +6,7 @@ import (
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
 	projectDomain "github.com/azisuazusa/todo-cli/internal/domain/project"
-	settingDomain "github.com/azisuazusa/todo-cli/internal/domain/setting"
+	syncintegrationDomain "github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	taskDomain "github.com/azisuazusa/todo-cli/internal/domain/task"
 	projectPresenter "github.com/azisuazusa/todo-cli/internal/presenter/project"
 	settingPresenter "github.com/azisuazusa/todo-cli/internal/presenter/setting"
@@ -35,10 +35,10 @@ func TodoCLI() *cli.App {
 	projectRepo := projectRepository.New(db)
 	taskUseCase := taskDomain.New(taskRepo, projectRepo)
 
-	settingIntegrationRepo := map[settingDomain.IntegrationType]settingDomain.IntegrationRepository{
-		settingDomain.Dropbox: dropbox.New(),
+	settingIntegrationRepo := map[syncintegrationDomain.SyncIntegrationType]syncintegrationDomain.IntegrationRepository{
+		syncintegrationDomain.Dropbox: dropbox.New(),
 	}
-	settingUseCase := settingDomain.New(settingRepository.New(db), settingIntegrationRepo)
+	settingUseCase := syncintegrationDomain.New(settingRepository.New(db), settingIntegrationRepo)
 
 	projectIntegrationRepo := map[entity.IntegrationType]projectDomain.IntegrationRepository{
 		entity.IntegrationTypeJIRA: jira.New(),
@@ -49,10 +49,11 @@ func TodoCLI() *cli.App {
 	settingPresenter := settingPresenter.New(settingUseCase)
 	projectPresenter := projectPresenter.New(projectUseCase, settingUseCase)
 	commands := taskCLI(taskPresenter)
+	commands = append(commands, projectCLI(projectPresenter), settingCLI(settingPresenter), setupCLI(db))
 	return &cli.App{
 		Name:     "todo",
 		Usage:    "todo-cli is a CLI for managing your todo list",
-		Commands: append(commands, projectCLI(projectPresenter), settingCLI(settingPresenter)),
+		Commands: commands,
 	}
 
 }

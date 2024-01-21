@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/azisuazusa/todo-cli/internal/domain/setting"
+	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -19,13 +19,13 @@ func New(db *sql.DB) *RepoImpl {
 	}
 }
 
-func (r *RepoImpl) SetIntegration(ctx context.Context, integration setting.Integration) error {
-	model, err := CreateModelFromIntegration(integration)
+func (r *RepoImpl) SetSyncIntegration(ctx context.Context, integration syncintegration.SyncIntegration) error {
+	model, err := CreateModelFromSyncIntegration(integration)
 	if err != nil {
 		return fmt.Errorf("failed to create model from integration: %w", err)
 	}
 
-	_, err = r.db.ExecContext(ctx, "INSERT INTO setting (id, type, details) VALUES (?, ?, ?)", model.ID, model.SettingType, model.SettingDetails)
+	_, err = r.db.ExecContext(ctx, "INSERT INTO settings (key, value) VALUES (?, ?)", model.Key, model.Value)
 	if err != nil {
 		return fmt.Errorf("failed to insert setting: %w", err)
 	}
@@ -33,12 +33,16 @@ func (r *RepoImpl) SetIntegration(ctx context.Context, integration setting.Integ
 	return nil
 }
 
-func (r *RepoImpl) GetIntegration(ctx context.Context) (setting.Integration, error) {
+func (r *RepoImpl) GetSyncIntegration(ctx context.Context) (syncintegration.SyncIntegration, error) {
 	var model SettingModel
-	err := r.db.QueryRowContext(ctx, "SELECT id, type, details FROM setting").Scan(&model.ID, &model.SettingType, &model.SettingDetails)
-	if err != nil {
-		return setting.Integration{}, fmt.Errorf("failed to get setting: %w", err)
+	err := r.db.QueryRowContext(ctx, "SELECT key, value FROM settings").Scan(&model.Key, &model.Value)
+	if err != nil && err != sql.ErrNoRows {
+		return syncintegration.SyncIntegration{}, fmt.Errorf("failed to get setting: %w", err)
 	}
 
-	return model.ToIntegrationEntity()
+	if err == sql.ErrNoRows {
+		return syncintegration.SyncIntegration{}, syncintegration.ErrSyncIntegrationNotFound
+	}
+
+	return model.ToSyncIntegration()
 }

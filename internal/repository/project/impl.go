@@ -23,6 +23,7 @@ func (ri *RepoImpl) GetAll(ctx context.Context) (entity.Projects, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query projects: %w", err)
 	}
+	defer rows.Close()
 
 	result := entity.Projects{}
 	for rows.Next() {
@@ -50,8 +51,8 @@ func (ri *RepoImpl) Insert(ctx context.Context, projectEntity entity.Project) er
 		return fmt.Errorf("failed to create project model: %w", err)
 	}
 
-	query := `INSERT INTO projects (name, description, is_selected, integrations) VALUES (?, ?, ?, ?)`
-	_, err = ri.db.ExecContext(ctx, query, project.Name, project.Description, project.IsSelected, project.Integrations)
+	query := `INSERT INTO projects (id, name, description, is_selected, integrations) VALUES (?, ?, ?, ?, ?)`
+	_, err = ri.db.ExecContext(ctx, query, project.ID, project.Name, project.Description, project.IsSelected, project.Integrations)
 	if err != nil {
 		return fmt.Errorf("failed to insert project: %w", err)
 	}

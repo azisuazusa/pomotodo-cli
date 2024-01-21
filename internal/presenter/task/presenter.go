@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
-	"github.com/azisuazusa/todo-cli/internal/domain/setting"
+	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/azisuazusa/todo-cli/internal/domain/task"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/manifoldco/promptui"
@@ -14,10 +14,10 @@ import (
 
 type Presenter struct {
 	taskUseCase    task.UseCase
-	settingUseCase setting.UseCase
+	settingUseCase syncintegration.UseCase
 }
 
-func New(taskUseCase task.UseCase, settingUseCase setting.UseCase) *Presenter {
+func New(taskUseCase task.UseCase, settingUseCase syncintegration.UseCase) *Presenter {
 	return &Presenter{
 		taskUseCase:    taskUseCase,
 		settingUseCase: settingUseCase,

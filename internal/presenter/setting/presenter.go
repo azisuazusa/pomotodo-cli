@@ -8,24 +8,24 @@ import (
 	"io"
 	"os"
 
-	"github.com/azisuazusa/todo-cli/internal/domain/setting"
+	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/manifoldco/promptui"
 )
 
 type Presenter struct {
-	settingUseCase setting.UseCase
+	settingUseCase syncintegration.UseCase
 }
 
-func New(settingUseCase setting.UseCase) *Presenter {
+func New(settingUseCase syncintegration.UseCase) *Presenter {
 	return &Presenter{
 		settingUseCase: settingUseCase,
 	}
 }
 
-func (p *Presenter) SetIntegration(ctx context.Context) error {
+func (p *Presenter) SetSyncIntegration(ctx context.Context) error {
 	prompt := promptui.Select{
-		Label: "Integration",
-		Items: []string{string(setting.Dropbox)},
+		Label: "Sync Integration",
+		Items: []string{string(syncintegration.Dropbox)},
 	}
 
 	_, result, err := prompt.Run()
@@ -34,11 +34,12 @@ func (p *Presenter) SetIntegration(ctx context.Context) error {
 		return err
 	}
 
-	integration := setting.Integration{
-		Type: setting.IntegrationType(result),
+	integration := syncintegration.SyncIntegration{
+		Type:    syncintegration.SyncIntegrationType(result),
+		Details: map[string]string{},
 	}
 
-	if integration.Type == setting.Dropbox {
+	if integration.Type == syncintegration.Dropbox {
 		prompt := promptui.Prompt{
 			Label: "Dropbox token",
 		}
@@ -53,7 +54,7 @@ func (p *Presenter) SetIntegration(ctx context.Context) error {
 		integration.Details["token"] = token
 	}
 
-	if err = p.settingUseCase.SetIntegration(ctx, integration); err != nil {
+	if err = p.settingUseCase.SetSyncIntegration(ctx, integration); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}

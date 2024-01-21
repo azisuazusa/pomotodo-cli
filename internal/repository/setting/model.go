@@ -3,9 +3,10 @@ package setting
 import (
 	"encoding/json"
 
-	"github.com/azisuazusa/todo-cli/internal/domain/setting"
-	"github.com/google/uuid"
+	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 )
+
+const KeySyncIntegration = "sync_integration"
 
 type IntegrationModel struct {
 	Type    string            `json:"type"`
@@ -13,33 +14,42 @@ type IntegrationModel struct {
 }
 
 type SettingModel struct {
-	ID             string
-	SettingType    string
-	SettingDetails string
+	Key   string
+	Value string
 }
 
-func CreateModelFromIntegration(integration setting.Integration) (SettingModel, error) {
-	detailBytes, err := json.Marshal(integration.Details)
+func CreateModelFromSyncIntegration(integration syncintegration.SyncIntegration) (SettingModel, error) {
+	integrationModel := IntegrationModel{
+		Type:    string(integration.Type),
+		Details: integration.Details,
+	}
+
+	detailBytes, err := json.Marshal(integrationModel)
 	if err != nil {
 		return SettingModel{}, err
 	}
 
 	return SettingModel{
-		ID:             uuid.NewString(),
-		SettingType:    string(integration.Type),
-		SettingDetails: string(detailBytes),
+		Key:   KeySyncIntegration,
+		Value: string(detailBytes),
 	}, nil
 }
 
-func (sm SettingModel) ToIntegrationEntity() (setting.Integration, error) {
-	var details map[string]string
-	err := json.Unmarshal([]byte(sm.SettingDetails), &details)
+func (sm SettingModel) ToSyncIntegration() (syncintegration.SyncIntegration, error) {
+	var value map[string]string
+	err := json.Unmarshal([]byte(sm.Value), &value)
 	if err != nil {
-		return setting.Integration{}, err
+		return syncintegration.SyncIntegration{}, err
 	}
 
-	return setting.Integration{
-		Type:    setting.IntegrationType(sm.SettingType),
+	var details map[string]string
+	err = json.Unmarshal([]byte(value["details"]), &details)
+	if err != nil {
+		return syncintegration.SyncIntegration{}, err
+	}
+
+	return syncintegration.SyncIntegration{
+		Type:    syncintegration.SyncIntegrationType(value["type"]),
 		Details: details,
 	}, nil
 }

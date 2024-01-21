@@ -20,8 +20,8 @@ type ProjectView struct {
 	Description string
 }
 
-func CreateProjectView(projectNumber int, p entity.Project) ProjectView {
-	projectName := fmt.Sprintf("%d. %s", projectNumber, p.Name)
+func CreateProjectView(p entity.Project) ProjectView {
+	projectName := p.Name
 	if len(p.Integrations) > 0 {
 		integrationTypes := []string{}
 		for _, integration := range p.Integrations {

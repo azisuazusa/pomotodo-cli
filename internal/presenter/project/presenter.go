@@ -7,17 +7,17 @@ import (
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
 	"github.com/azisuazusa/todo-cli/internal/domain/project"
-	"github.com/azisuazusa/todo-cli/internal/domain/setting"
+	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/manifoldco/promptui"
 )
 
 type Presenter struct {
 	projectUseCase project.UseCase
-	settingUseCase setting.UseCase
+	settingUseCase syncintegration.UseCase
 }
 
-func New(projectUseCase project.UseCase, settingUseCase setting.UseCase) *Presenter {
+func New(projectUseCase project.UseCase, settingUseCase syncintegration.UseCase) *Presenter {
 	return &Presenter{
 		projectUseCase: projectUseCase,
 		settingUseCase: settingUseCase,
@@ -37,8 +37,8 @@ func (p *Presenter) GetProjects(ctx context.Context) error {
 	t.AppendHeader(table.Row{"#", "Name", "Description"})
 
 	for i, project := range projects {
-		projectView := CreateProjectView(i+1, project)
-		t.AppendRow(table.Row{projectView.Name, projectView.Description})
+		projectView := CreateProjectView(project)
+		t.AppendRow(table.Row{i + 1, projectView.Name, projectView.Description})
 	}
 
 	t.SetStyle(table.StyleLight)

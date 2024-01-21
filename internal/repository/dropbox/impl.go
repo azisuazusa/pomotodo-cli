@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	settingDomain "github.com/azisuazusa/todo-cli/internal/domain/setting"
+	syncintegrationDomain "github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
 )
@@ -17,7 +17,7 @@ func New() *RepoImpl {
 	return &RepoImpl{}
 }
 
-func (ri *RepoImpl) Download(ctx context.Context, integrationEntity settingDomain.Integration) error {
+func (ri *RepoImpl) Download(ctx context.Context, integrationEntity syncintegrationDomain.SyncIntegration) error {
 	dbxCfg := dropbox.Config{
 		Token: integrationEntity.Details["token"],
 	}
@@ -46,7 +46,7 @@ func (ri *RepoImpl) Download(ctx context.Context, integrationEntity settingDomai
 	return nil
 }
 
-func (ri *RepoImpl) Upload(ctx context.Context, integrationEntity settingDomain.Integration) error {
+func (ri *RepoImpl) Upload(ctx context.Context, integrationEntity syncintegrationDomain.SyncIntegration) error {
 	dbxCfg := dropbox.Config{
 		Token: integrationEntity.Details["token"],
 	}
