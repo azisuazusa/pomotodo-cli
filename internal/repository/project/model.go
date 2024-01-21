@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
+	"github.com/google/uuid"
 )
 
 type IntegrationModel struct {
 	IsEnabled bool              `json:"is_enabled"`
 	Type      string            `json:"type"`
-	Details   map[string]string `json:"auth"`
+	Details   map[string]string `json:"details"`
 }
 
 type ProjectModel struct {
@@ -59,6 +60,10 @@ func CreateModel(entity entity.Project) (ProjectModel, error) {
 	jsonIntegrations, err := json.Marshal(integrationModels)
 	if err != nil {
 		return ProjectModel{}, fmt.Errorf("failed to marshal integrations: %w", err)
+	}
+
+	if entity.ID == "" {
+		entity.ID = uuid.NewString()
 	}
 
 	return ProjectModel{

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
+	"github.com/google/uuid"
 )
 
 type TaskHistoryModel struct {
@@ -86,6 +87,10 @@ func CreateModel(task entity.Task) (TaskModel, error) {
 	historiesBytes, err := json.Marshal(historyModels)
 	if err != nil {
 		return TaskModel{}, fmt.Errorf("failed to marshal histories: %w", err)
+	}
+
+	if task.ID == "" {
+		task.ID = uuid.NewString()
 	}
 
 	return TaskModel{

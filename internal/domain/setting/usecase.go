@@ -6,23 +6,53 @@ import (
 )
 
 type UseCase interface {
-	SetDropboxToken(ctx context.Context, token string) error
+	SetIntegration(ctx context.Context, integration Integration) error
+	Upload(ctx context.Context) error
+	Download(ctx context.Context) error
 }
 
 type useCase struct {
-	settingRepo SettingRepository
+	settingRepo     SettingRepository
+	integrationRepo map[IntegrationType]IntegrationRepository
 }
 
-func New(settingRepo SettingRepository) UseCase {
+func New(settingRepo SettingRepository, integrationRepo map[IntegrationType]IntegrationRepository) UseCase {
 	return &useCase{
-		settingRepo: settingRepo,
+		settingRepo:     settingRepo,
+		integrationRepo: integrationRepo,
 	}
 }
 
-func (u *useCase) SetDropboxToken(ctx context.Context, token string) error {
-	err := u.settingRepo.SetDropboxToken(ctx, token)
+func (u *useCase) SetIntegration(ctx context.Context, integration Integration) error {
+	err := u.settingRepo.SetIntegration(ctx, integration)
 	if err != nil {
 		return fmt.Errorf("error while setting dropbox token: %w", err)
+	}
+
+	return nil
+}
+
+func (u *useCase) Upload(ctx context.Context) error {
+	integration, err := u.settingRepo.GetIntegration(ctx)
+	if err != nil {
+		return fmt.Errorf("error while getting integration: %w", err)
+	}
+
+	if err = u.integrationRepo[integration.Type].Upload(ctx, integration); err != nil {
+		return fmt.Errorf("error while uploading: %w", err)
+	}
+
+	return nil
+}
+
+func (u *useCase) Download(ctx context.Context) error {
+	integration, err := u.settingRepo.GetIntegration(ctx)
+	if err != nil {
+		return fmt.Errorf("error while getting integration: %w", err)
+	}
+
+	if err = u.integrationRepo[integration.Type].Download(ctx, integration); err != nil {
+		return fmt.Errorf("error while downloading: %w", err)
 	}
 
 	return nil

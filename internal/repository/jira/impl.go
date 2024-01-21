@@ -15,13 +15,13 @@ func New() *RepoImpl {
 	return &RepoImpl{}
 }
 
-func (ri *RepoImpl) initJIRAClient(ctx context.Context, integrationEntity entity.Integration) (*jira.Client, error) {
+func (ri *RepoImpl) initJIRAClient(ctx context.Context, integrationDetails map[string]string) (*jira.Client, error) {
 	jiraAuth := jira.BasicAuthTransport{
-		Username: integrationEntity.Details["username"],
-		Password: integrationEntity.Details["password"],
+		Username: integrationDetails["username"],
+		Password: integrationDetails["token"],
 	}
 
-	client, err := jira.NewClient(jiraAuth.Client(), integrationEntity.Details["url"])
+	client, err := jira.NewClient(jiraAuth.Client(), integrationDetails["url"])
 	if err != nil {
 		return nil, fmt.Errorf("error while creating jira client: %w", err)
 	}
@@ -29,10 +29,10 @@ func (ri *RepoImpl) initJIRAClient(ctx context.Context, integrationEntity entity
 	return client, nil
 }
 
-func (ri *RepoImpl) GetTasks(ctx context.Context, projectID string, integrationEntity entity.Integration) ([]entity.Task, error) {
-	client, err := ri.initJIRAClient(ctx, integrationEntity)
+func (ri *RepoImpl) GetTasks(ctx context.Context, projectID string, integrationDetails map[string]string) (entity.Tasks, error) {
+	client, err := ri.initJIRAClient(ctx, integrationDetails)
 	if err != nil {
-		return []entity.Task{}, fmt.Errorf("error while initializing jira client: %w", err)
+		return entity.Tasks{}, fmt.Errorf("error while initializing jira client: %w", err)
 	}
 
 	last := 0
@@ -43,10 +43,10 @@ func (ri *RepoImpl) GetTasks(ctx context.Context, projectID string, integrationE
 			MaxResults: 1000,
 		}
 
-		chunk, resp, errSearch := client.Issue.Search(integrationEntity.Details["jql"], opt)
+		chunk, resp, errSearch := client.Issue.Search(integrationDetails["jql"], opt)
 		if errSearch != nil {
 			err = errSearch
-			return []entity.Task{}, fmt.Errorf("error while searching issues: %w", err)
+			return entity.Tasks{}, fmt.Errorf("error while searching issues: %w", err)
 		}
 
 		total := resp.Total
@@ -81,7 +81,7 @@ func (ri *RepoImpl) GetTasks(ctx context.Context, projectID string, integrationE
 }
 
 func (ri *RepoImpl) AddWorklog(ctx context.Context, issueID, taskName string, timeSpent time.Duration, integrationEntity entity.Integration) error {
-	client, err := ri.initJIRAClient(ctx, integrationEntity)
+	client, err := ri.initJIRAClient(ctx, integrationEntity.Details)
 	if err != nil {
 		return fmt.Errorf("error while initializing jira client: %w", err)
 	}
@@ -95,6 +95,8 @@ func (ri *RepoImpl) AddWorklog(ctx context.Context, issueID, taskName string, ti
 	if err != nil {
 		return fmt.Errorf("error while adding worklog: %w", err)
 	}
+
+	fmt.Printf("Worklog added to %s\n", taskName)
 
 	return nil
 

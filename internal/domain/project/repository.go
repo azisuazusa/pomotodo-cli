@@ -6,10 +6,6 @@ import (
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
 )
 
-type SyncRepository interface {
-	Sync(ctx context.Context) error
-}
-
 type ProjectRepository interface {
 	GetAll(ctx context.Context) (entity.Projects, error)
 	Insert(ctx context.Context, project entity.Project) error
@@ -24,5 +20,5 @@ type TaskRepository interface {
 }
 
 type IntegrationRepository interface {
-	GetTasks(ctx context.Context, auth map[string]string) (entity.Tasks, error)
+	GetTasks(ctx context.Context, projectID string, details map[string]string) (entity.Tasks, error)
 }

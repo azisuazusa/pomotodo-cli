@@ -10,23 +10,22 @@ import (
 
 type UseCase interface {
 	GetUncompleteTasks(ctx context.Context) (entity.Tasks, error)
+	GetUncompleteParentTasks(ctx context.Context) (entity.Tasks, error)
 	Add(ctx context.Context, task entity.Task) error
 	Start(ctx context.Context, id string) error
-	Stop(ctx context.Context, id string) error
+	Stop(ctx context.Context) error
 	Remove(ctx context.Context, id string) error
 	Complete(ctx context.Context, id string) error
 }
 
 type useCase struct {
 	taskRepo    TaskRepository
-	syncRepo    SyncRepository
 	projectRepo ProjectRepository
 }
 
-func New(taskRepo TaskRepository, syncRepo SyncRepository, projectRepo ProjectRepository) UseCase {
+func New(taskRepo TaskRepository, projectRepo ProjectRepository) UseCase {
 	return &useCase{
 		taskRepo:    taskRepo,
-		syncRepo:    syncRepo,
 		projectRepo: projectRepo,
 	}
 }
@@ -37,7 +36,38 @@ func (u *useCase) GetUncompleteTasks(ctx context.Context) (entity.Tasks, error) 
 		return nil, fmt.Errorf("error while getting selected project: %w", err)
 	}
 
-	return u.taskRepo.GetUncompleteTasks(ctx, project.ID)
+	parentTasks, err := u.taskRepo.GetUncompleteParentTasks(ctx, project.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting uncomplete parent tasks: %w", err)
+	}
+
+	subTasks, err := u.taskRepo.GetUncompleteSubTask(ctx, project.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting uncomplete sub tasks: %w", err)
+	}
+
+	var tasks entity.Tasks
+	for _, task := range parentTasks {
+		tasks = append(tasks, task)
+		tasks = append(tasks, subTasks[task.ID]...)
+	}
+
+	return tasks, nil
+
+}
+
+func (u *useCase) GetUncompleteParentTasks(ctx context.Context) (entity.Tasks, error) {
+	project, err := u.projectRepo.GetSelectedProject(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting selected project: %w", err)
+	}
+
+	tasks, err := u.taskRepo.GetUncompleteParentTasks(ctx, project.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting uncomplete parent tasks: %w", err)
+	}
+
+	return tasks, nil
 }
 
 func (u *useCase) Add(ctx context.Context, task entity.Task) error {
@@ -51,13 +81,6 @@ func (u *useCase) Add(ctx context.Context, task entity.Task) error {
 	if err != nil {
 		return fmt.Errorf("error while inserting task: %w", err)
 	}
-
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
 
 	return nil
 }
@@ -75,18 +98,11 @@ func (u *useCase) Start(ctx context.Context, id string) error {
 		return fmt.Errorf("error while updating task: %w", err)
 	}
 
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
-
 	return nil
 }
 
-func (u *useCase) Stop(ctx context.Context, id string) error {
-	task, err := u.taskRepo.GetByID(ctx, id)
+func (u *useCase) Stop(ctx context.Context) error {
+	task, err := u.taskRepo.GetStartedTask(ctx)
 	if err != nil {
 		return fmt.Errorf("error while getting task: %w", err)
 	}
@@ -99,13 +115,6 @@ func (u *useCase) Stop(ctx context.Context, id string) error {
 		return fmt.Errorf("error while updating task: %w", err)
 	}
 
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
-
 	return nil
 }
 
@@ -114,13 +123,6 @@ func (u *useCase) Remove(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("error while deleting task: %w", err)
 	}
-
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
 
 	return nil
 }
@@ -140,13 +142,6 @@ func (u *useCase) Complete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("error while updating task: %w", err)
 	}
-
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
 
 	return nil
 }

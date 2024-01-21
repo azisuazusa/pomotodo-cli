@@ -9,7 +9,6 @@ import (
 
 type useCase struct {
 	projectRepo      ProjectRepository
-	syncRepo         SyncRepository
 	taskRepo         TaskRepository
 	integrationRepos map[entity.IntegrationType]IntegrationRepository
 }
@@ -21,13 +20,17 @@ type UseCase interface {
 	Select(ctx context.Context, id string) error
 	SyncTasks(ctx context.Context) error
 	AddIntegration(ctx context.Context, integration entity.Integration) error
+	RemoveIntegration(ctx context.Context, integrationType entity.IntegrationType) error
+	GetSelected(ctx context.Context) (entity.Project, error)
+	EnableIntegration(ctx context.Context, integrationType entity.IntegrationType) error
+	DisableIntegration(ctx context.Context, integrationType entity.IntegrationType) error
 }
 
-func New(projectRepo ProjectRepository, syncRepo SyncRepository, taskRepo TaskRepository) UseCase {
+func New(projectRepo ProjectRepository, integrationRepos map[entity.IntegrationType]IntegrationRepository, taskRepo TaskRepository) UseCase {
 	return &useCase{
-		projectRepo: projectRepo,
-		syncRepo:    syncRepo,
-		taskRepo:    taskRepo,
+		projectRepo:      projectRepo,
+		taskRepo:         taskRepo,
+		integrationRepos: integrationRepos,
 	}
 }
 
@@ -41,13 +44,6 @@ func (u *useCase) Insert(ctx context.Context, project entity.Project) error {
 		return fmt.Errorf("error while inserting project: %w", err)
 	}
 
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
-
 	return nil
 }
 
@@ -56,13 +52,6 @@ func (u *useCase) Delete(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("error while deleting project: %w", err)
 	}
-
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
 
 	return nil
 }
@@ -79,13 +68,6 @@ func (u *useCase) Select(ctx context.Context, id string) error {
 		return fmt.Errorf("error while updating project: %w", err)
 	}
 
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
-		}
-	}()
-
 	return nil
 }
 
@@ -99,7 +81,7 @@ func (u *useCase) SyncTasks(ctx context.Context) error {
 	for _, integration := range project.Integrations {
 		if integration.IsEnabled {
 			integrationRepo := u.integrationRepos[integration.Type]
-			integrationTasks, err := integrationRepo.GetTasks(ctx, integration.Details)
+			integrationTasks, err := integrationRepo.GetTasks(ctx, project.ID, integration.Details)
 			if err != nil {
 				return fmt.Errorf("error while syncing tasks: %w", err)
 			}
@@ -130,12 +112,72 @@ func (u *useCase) AddIntegration(ctx context.Context, integration entity.Integra
 		return fmt.Errorf("error while updating project: %w", err)
 	}
 
-	go func() {
-		err := u.syncRepo.Sync(ctx)
-		if err != nil {
-			fmt.Printf("error while syncing: %v\n", err)
+	return nil
+}
+
+func (u *useCase) RemoveIntegration(ctx context.Context, integrationType entity.IntegrationType) error {
+	project, err := u.projectRepo.GetSelectedProject(ctx)
+	if err != nil {
+		return fmt.Errorf("error while getting selected project: %w", err)
+	}
+
+	for i, integration := range project.Integrations {
+		if integration.Type == integrationType {
+			project.Integrations = append(project.Integrations[:i], project.Integrations[i+1:]...)
+			break
 		}
-	}()
+	}
+
+	err = u.projectRepo.Update(ctx, project)
+	if err != nil {
+		return fmt.Errorf("error while updating project: %w", err)
+	}
+
+	return nil
+}
+
+func (u *useCase) GetSelected(ctx context.Context) (entity.Project, error) {
+	return u.projectRepo.GetSelectedProject(ctx)
+}
+
+func (u *useCase) EnableIntegration(ctx context.Context, integrationType entity.IntegrationType) error {
+	project, err := u.projectRepo.GetSelectedProject(ctx)
+	if err != nil {
+		return fmt.Errorf("error while getting selected project: %w", err)
+	}
+
+	for i, integration := range project.Integrations {
+		if integration.Type == integrationType {
+			project.Integrations[i].IsEnabled = true
+			break
+		}
+	}
+
+	err = u.projectRepo.Update(ctx, project)
+	if err != nil {
+		return fmt.Errorf("error while updating project: %w", err)
+	}
+
+	return nil
+}
+
+func (u *useCase) DisableIntegration(ctx context.Context, integrationType entity.IntegrationType) error {
+	project, err := u.projectRepo.GetSelectedProject(ctx)
+	if err != nil {
+		return fmt.Errorf("error while getting selected project: %w", err)
+	}
+
+	for i, integration := range project.Integrations {
+		if integration.Type == integrationType {
+			project.Integrations[i].IsEnabled = false
+			break
+		}
+	}
+
+	err = u.projectRepo.Update(ctx, project)
+	if err != nil {
+		return fmt.Errorf("error while updating project: %w", err)
+	}
 
 	return nil
 }

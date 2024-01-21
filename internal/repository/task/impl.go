@@ -17,9 +17,9 @@ func New(db *sql.DB) *RepoImpl {
 	return &RepoImpl{db: db}
 }
 
-func (ri *RepoImpl) GetUncompleteTasks(ctx context.Context, projectID string) ([]entity.Task, error) {
+func (ri *RepoImpl) GetUncompleteParentTasks(ctx context.Context, projectID string) (entity.Tasks, error) {
 	var tasks []entity.Task
-	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ?`
+	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id IS NULL`
 	rows, err := ri.db.QueryContext(ctx, query, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
@@ -39,6 +39,33 @@ func (ri *RepoImpl) GetUncompleteTasks(ctx context.Context, projectID string) ([
 		}
 
 		tasks = append(tasks, taskEntity)
+	}
+
+	return tasks, nil
+}
+
+func (ri *RepoImpl) GetUncompleteSubTask(ctx context.Context, projectID string) (map[string]entity.Tasks, error) {
+	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id IS NOT NULL`
+	rows, err := ri.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tasks: %w", err)
+	}
+	defer rows.Close()
+
+	tasks := map[string]entity.Tasks{}
+	for rows.Next() {
+		var task TaskModel
+		err := rows.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan task: %w", err)
+		}
+
+		taskEntity, err := task.ToEntity()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert task to entity: %w", err)
+		}
+
+		tasks[task.ParentTaskID] = append(tasks[task.ParentTaskID], taskEntity)
 	}
 
 	return tasks, nil
@@ -74,14 +101,9 @@ func (ri *RepoImpl) Update(ctx context.Context, taskEntity entity.Task) error {
 	return nil
 }
 
-func (ri *RepoImpl) Delete(ctx context.Context, taskEntity entity.Task) error {
-	task, err := CreateModel(taskEntity)
-	if err != nil {
-		return fmt.Errorf("failed to create task model: %w", err)
-	}
-
+func (ri *RepoImpl) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM tasks WHERE id = ?`
-	_, err = ri.db.ExecContext(ctx, query, task.ID)
+	_, err := ri.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete task: %w", err)
 	}
@@ -120,4 +142,22 @@ func (ri *RepoImpl) Upsert(ctx context.Context, taskEntity entity.Task) error {
 	}
 
 	return nil
+}
+
+func (ri *RepoImpl) GetStartedTask(ctx context.Context) (entity.Task, error) {
+	query := `SELECT * FROM tasks WHERE is_started = ? LIMIT 1`
+	row := ri.db.QueryRowContext(ctx, query, true)
+
+	var task TaskModel
+	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration)
+	if err != nil {
+		return entity.Task{}, fmt.Errorf("failed to scan task: %w", err)
+	}
+
+	taskEntity, err := task.ToEntity()
+	if err != nil {
+		return entity.Task{}, fmt.Errorf("failed to convert task to entity: %w", err)
+	}
+
+	return taskEntity, nil
 }
