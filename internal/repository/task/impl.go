@@ -19,7 +19,7 @@ func New(db *sql.DB) *RepoImpl {
 
 func (ri *RepoImpl) GetUncompleteParentTasks(ctx context.Context, projectID string) (entity.Tasks, error) {
 	var tasks []entity.Task
-	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id IS NULL`
+	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id = '' OR parent_task_id IS NULL`
 	rows, err := ri.db.QueryContext(ctx, query, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
@@ -28,7 +28,7 @@ func (ri *RepoImpl) GetUncompleteParentTasks(ctx context.Context, projectID stri
 
 	for rows.Next() {
 		var task TaskModel
-		err := rows.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration)
+		err := rows.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration, &task.Histories)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan task: %w", err)
 		}
@@ -45,7 +45,7 @@ func (ri *RepoImpl) GetUncompleteParentTasks(ctx context.Context, projectID stri
 }
 
 func (ri *RepoImpl) GetUncompleteSubTask(ctx context.Context, projectID string) (map[string]entity.Tasks, error) {
-	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id IS NOT NULL`
+	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND (parent_task_id IS NOT NULL AND parent_task_id != '')`
 	rows, err := ri.db.QueryContext(ctx, query, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
@@ -55,7 +55,7 @@ func (ri *RepoImpl) GetUncompleteSubTask(ctx context.Context, projectID string) 
 	tasks := map[string]entity.Tasks{}
 	for rows.Next() {
 		var task TaskModel
-		err := rows.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration)
+		err := rows.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration, &task.Histories)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan task: %w", err)
 		}
@@ -65,7 +65,7 @@ func (ri *RepoImpl) GetUncompleteSubTask(ctx context.Context, projectID string) 
 			return nil, fmt.Errorf("failed to convert task to entity: %w", err)
 		}
 
-		tasks[task.ParentTaskID] = append(tasks[task.ParentTaskID], taskEntity)
+		tasks[task.ParentTaskID.String] = append(tasks[task.ParentTaskID.String], taskEntity)
 	}
 
 	return tasks, nil
@@ -92,8 +92,8 @@ func (ri *RepoImpl) Update(ctx context.Context, taskEntity entity.Task) error {
 		return fmt.Errorf("failed to create task model: %w", err)
 	}
 
-	query := `UPDATE tasks SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ? WHERE id = ?`
-	_, err = ri.db.ExecContext(ctx, query, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration, task.ID)
+	query := `UPDATE tasks SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?, histories = ? WHERE id = ?`
+	_, err = ri.db.ExecContext(ctx, query, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration, task.Histories, task.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update task: %w", err)
 	}
@@ -116,7 +116,7 @@ func (ri *RepoImpl) GetByID(ctx context.Context, id string) (entity.Task, error)
 	row := ri.db.QueryRowContext(ctx, query, id)
 
 	var task TaskModel
-	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration)
+	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration, &task.Histories)
 	if err != nil {
 		return entity.Task{}, fmt.Errorf("failed to scan task: %w", err)
 	}
@@ -149,7 +149,7 @@ func (ri *RepoImpl) GetStartedTask(ctx context.Context) (entity.Task, error) {
 	row := ri.db.QueryRowContext(ctx, query, true)
 
 	var task TaskModel
-	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration)
+	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration, &task.Histories)
 	if err != nil {
 		return entity.Task{}, fmt.Errorf("failed to scan task: %w", err)
 	}

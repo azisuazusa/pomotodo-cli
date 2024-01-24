@@ -32,6 +32,13 @@ func projectCLI(presenter *project.Presenter) *cli.Command {
 				},
 			},
 			{
+				Name:  "sync-task",
+				Usage: "Sync tasks for a project",
+				Action: func(c *cli.Context) error {
+					return presenter.SyncTasks(c.Context)
+				},
+			},
+			{
 				Name:  "select",
 				Usage: "Select a project",
 				Action: func(c *cli.Context) error {

@@ -1,6 +1,7 @@
 package project
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -17,14 +18,14 @@ type IntegrationModel struct {
 type ProjectModel struct {
 	ID           string
 	Name         string
-	Description  string
+	Description  sql.NullString
 	IsSelected   bool
-	Integrations string
+	Integrations sql.NullString
 }
 
 func (pm ProjectModel) ToEntity() (entity.Project, error) {
 	var integrationModels []IntegrationModel
-	err := json.Unmarshal([]byte(pm.Integrations), &integrationModels)
+	err := json.Unmarshal([]byte(pm.Integrations.String), &integrationModels)
 	if err != nil {
 		return entity.Project{}, fmt.Errorf("failed to unmarshal integrations: %w", err)
 	}
@@ -41,7 +42,7 @@ func (pm ProjectModel) ToEntity() (entity.Project, error) {
 	return entity.Project{
 		ID:           pm.ID,
 		Name:         pm.Name,
-		Description:  pm.Description,
+		Description:  pm.Description.String,
 		IsSelected:   pm.IsSelected,
 		Integrations: integrations,
 	}, nil
@@ -69,8 +70,8 @@ func CreateModel(entity entity.Project) (ProjectModel, error) {
 	return ProjectModel{
 		ID:           entity.ID,
 		Name:         entity.Name,
-		Description:  entity.Description,
+		Description:  sql.NullString{String: entity.Description, Valid: entity.Description != ""},
 		IsSelected:   entity.IsSelected,
-		Integrations: string(jsonIntegrations),
+		Integrations: sql.NullString{String: string(jsonIntegrations), Valid: len(integrationModels) > 0},
 	}, nil
 }

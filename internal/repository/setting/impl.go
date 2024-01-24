@@ -25,7 +25,8 @@ func (r *RepoImpl) SetSyncIntegration(ctx context.Context, integration syncinteg
 		return fmt.Errorf("failed to create model from integration: %w", err)
 	}
 
-	_, err = r.db.ExecContext(ctx, "INSERT INTO settings (key, value) VALUES (?, ?)", model.Key, model.Value)
+	upsertQuery := "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?"
+	_, err = r.db.ExecContext(ctx, upsertQuery, model.Key, model.Value, model.Value)
 	if err != nil {
 		return fmt.Errorf("failed to insert setting: %w", err)
 	}
@@ -35,7 +36,7 @@ func (r *RepoImpl) SetSyncIntegration(ctx context.Context, integration syncinteg
 
 func (r *RepoImpl) GetSyncIntegration(ctx context.Context) (syncintegration.SyncIntegration, error) {
 	var model SettingModel
-	err := r.db.QueryRowContext(ctx, "SELECT key, value FROM settings").Scan(&model.Key, &model.Value)
+	err := r.db.QueryRowContext(ctx, "SELECT key, value FROM settings WHERE key = ?", KeySyncIntegration).Scan(&model.Key, &model.Value)
 	if err != nil && err != sql.ErrNoRows {
 		return syncintegration.SyncIntegration{}, fmt.Errorf("failed to get setting: %w", err)
 	}

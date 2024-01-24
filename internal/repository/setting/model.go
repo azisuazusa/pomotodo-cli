@@ -36,20 +36,14 @@ func CreateModelFromSyncIntegration(integration syncintegration.SyncIntegration)
 }
 
 func (sm SettingModel) ToSyncIntegration() (syncintegration.SyncIntegration, error) {
-	var value map[string]string
-	err := json.Unmarshal([]byte(sm.Value), &value)
-	if err != nil {
-		return syncintegration.SyncIntegration{}, err
-	}
-
-	var details map[string]string
-	err = json.Unmarshal([]byte(value["details"]), &details)
+	var integrationModel IntegrationModel
+	err := json.Unmarshal([]byte(sm.Value), &integrationModel)
 	if err != nil {
 		return syncintegration.SyncIntegration{}, err
 	}
 
 	return syncintegration.SyncIntegration{
-		Type:    syncintegration.SyncIntegrationType(value["type"]),
-		Details: details,
+		Type:    syncintegration.SyncIntegrationType(integrationModel.Type),
+		Details: integrationModel.Details,
 	}, nil
 }

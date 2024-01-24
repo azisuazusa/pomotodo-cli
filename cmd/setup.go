@@ -37,8 +37,8 @@ func setupCLI(db *sql.DB) *cli.Command {
 					id VARCHAR PRIMARY KEY,
 					name TEXT NOT NULL,
 					description TEXT,
-					is_selected BOOLEAN NOT NULL,
-					integrations TEXT NOT NULL
+					is_selected BOOLEAN NOT NULL DEFAULT FALSE,
+					integrations TEXT
 				);
 
 				CREATE TABLE IF NOT EXISTS tasks (
@@ -46,8 +46,13 @@ func setupCLI(db *sql.DB) *cli.Command {
 					project_id VARCHAR NOT NULL,
 					name TEXT NOT NULL,
 					description TEXT,
-					is_completed BOOLEAN NOT NULL,
-					FOREIGN KEY (project_id) REFERENCES projects(id)
+					is_started BOOLEAN NOT NULL DEFAULT FALSE,
+					completed_at DATETIME,
+					parent_task_id VARCHAR,
+					integration TEXT,
+					histories TEXT,
+					FOREIGN KEY (project_id) REFERENCES projects(id),
+					FOREIGN KEY (parent_task_id) REFERENCES tasks(id)
 				);
 
 				CREATE TABLE IF NOT EXISTS settings (

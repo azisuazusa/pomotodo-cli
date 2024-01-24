@@ -15,8 +15,9 @@ var taskSelectTemplate = &promptui.SelectTemplates{
 }
 
 type TaskView struct {
-	Name        string
-	Description string
+	Name         string
+	Description  string
+	ParentTaskID string
 }
 
 func CreateTaskView(taskNumber int, t entity.Task) TaskView {
@@ -29,8 +30,14 @@ func CreateTaskView(taskNumber int, t entity.Task) TaskView {
 		taskName = fmt.Sprintf("%s (%s)", taskName, t.Integration.ID)
 	}
 
+	description := t.Description
+	if len(description) > 50 {
+		description = description[:50] + "..."
+	}
+
 	return TaskView{
-		Name:        taskName,
-		Description: t.Description,
+		Name:         taskName,
+		Description:  description,
+		ParentTaskID: t.ParentTaskID,
 	}
 }

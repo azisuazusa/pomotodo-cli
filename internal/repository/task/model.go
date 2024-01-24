@@ -1,6 +1,7 @@
 package task
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -23,49 +24,54 @@ type TaskModel struct {
 	ID           string
 	ProjectID    string
 	Name         string
-	Description  string
+	Description  sql.NullString
 	IsStarted    bool
-	CompletedAt  time.Time
-	ParentTaskID string
-	Integration  string
-	Histories    string
+	CompletedAt  sql.NullTime
+	ParentTaskID sql.NullString
+	Integration  sql.NullString
+	Histories    sql.NullString
 }
 
 func (tm TaskModel) ToEntity() (entity.Task, error) {
-	var integrationModel TaskIntegrationModel
-	err := json.Unmarshal([]byte(tm.Integration), &integrationModel)
-	if err != nil {
-		return entity.Task{}, fmt.Errorf("failed to unmarshal integration: %w", err)
-	}
-
-	var historyModels []TaskHistoryModel
-	err = json.Unmarshal([]byte(tm.Histories), &historyModels)
-	if err != nil {
-		return entity.Task{}, fmt.Errorf("failed to unmarshal histories: %w", err)
-	}
-
-	var histories []entity.TaskHistory
-	for _, historyModel := range historyModels {
-		histories = append(histories, entity.TaskHistory{
-			StartedAt: historyModel.StartedAt,
-			StoppedAt: historyModel.StoppedAt,
-		})
-	}
-
-	return entity.Task{
+	task := entity.Task{
 		ID:           tm.ID,
 		ProjectID:    tm.ProjectID,
 		Name:         tm.Name,
-		Description:  tm.Description,
+		Description:  tm.Description.String,
 		IsStarted:    tm.IsStarted,
-		CompletedAt:  tm.CompletedAt,
-		ParentTaskID: tm.ParentTaskID,
-		Integration: entity.TaskIntegration{
+		CompletedAt:  tm.CompletedAt.Time,
+		ParentTaskID: tm.ParentTaskID.String,
+	}
+
+	if tm.Integration.Valid {
+		var integrationModel TaskIntegrationModel
+		err := json.Unmarshal([]byte(tm.Integration.String), &integrationModel)
+		if err != nil {
+			return entity.Task{}, fmt.Errorf("failed to unmarshal integration: %w", err)
+		}
+
+		task.Integration = entity.TaskIntegration{
 			ID:   integrationModel.ID,
 			Type: entity.IntegrationType(integrationModel.Type),
-		},
-		Histories: histories,
-	}, nil
+		}
+	}
+
+	if tm.Histories.Valid {
+		var historyModels []TaskHistoryModel
+		err := json.Unmarshal([]byte(tm.Histories.String), &historyModels)
+		if err != nil {
+			return entity.Task{}, fmt.Errorf("failed to unmarshal histories: %w", err)
+		}
+
+		for _, historyModel := range historyModels {
+			task.Histories = append(task.Histories, entity.TaskHistory{
+				StartedAt: historyModel.StartedAt,
+				StoppedAt: historyModel.StoppedAt,
+			})
+		}
+	}
+
+	return task, nil
 }
 
 func CreateModel(task entity.Task) (TaskModel, error) {
@@ -97,11 +103,11 @@ func CreateModel(task entity.Task) (TaskModel, error) {
 		ID:           task.ID,
 		ProjectID:    task.ProjectID,
 		Name:         task.Name,
-		Description:  task.Description,
+		Description:  sql.NullString{String: task.Description, Valid: task.Description != ""},
 		IsStarted:    task.IsStarted,
-		CompletedAt:  task.CompletedAt,
-		ParentTaskID: task.ParentTaskID,
-		Integration:  string(integrationBytes),
-		Histories:    string(historiesBytes),
+		CompletedAt:  sql.NullTime{Time: task.CompletedAt, Valid: !task.CompletedAt.IsZero()},
+		ParentTaskID: sql.NullString{String: task.ParentTaskID, Valid: task.ParentTaskID != ""},
+		Integration:  sql.NullString{String: string(integrationBytes), Valid: len(integrationBytes) > 0},
+		Histories:    sql.NullString{String: string(historiesBytes), Valid: len(historiesBytes) > 0},
 	}, nil
 }

@@ -43,13 +43,18 @@ func (p *Presenter) GetUncompleteTasks(ctx context.Context) error {
 			isStarted = "Started"
 		}
 
+		description := task.Description
+		if len(description) > 50 {
+			description = description[:50] + "..."
+		}
+
 		if task.ParentTaskID == "" {
-			t.AppendRow(table.Row{taskNumber, task.Name, task.Description, isStarted})
+			t.AppendRow(table.Row{taskNumber, task.Name, description, isStarted})
 			taskNumber++
 			continue
 		}
 
-		t.AppendRow(table.Row{"", task.Name, task.Description, isStarted})
+		t.AppendRow(table.Row{"", task.Name, description, isStarted})
 	}
 
 	t.SetStyle(table.StyleLight)

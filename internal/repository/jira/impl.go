@@ -64,12 +64,13 @@ func (ri *RepoImpl) GetTasks(ctx context.Context, projectID string, integrationD
 	var tasks []entity.Task
 	for _, issue := range issues {
 		task := entity.Task{
+			ID:          issue.ID,
 			ProjectID:   projectID,
 			Name:        issue.Fields.Summary,
 			Description: issue.Fields.Description,
 			CompletedAt: time.Time{},
 			Integration: entity.TaskIntegration{
-				ID:   issue.ID,
+				ID:   issue.Key,
 				Type: entity.IntegrationTypeJIRA,
 			},
 		}

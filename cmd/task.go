@@ -53,6 +53,13 @@ func taskCLI(presenter *task.Presenter) []*cli.Command {
 				return presenter.Complete(c.Context)
 			},
 		},
+		{
+			Name:  "list",
+			Usage: "List tasks",
+			Action: func(c *cli.Context) error {
+				return presenter.GetUncompleteTasks(c.Context)
+			},
+		},
 	}
 
 }

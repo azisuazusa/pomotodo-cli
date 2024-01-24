@@ -95,9 +95,15 @@ func (p *Presenter) Remove(ctx context.Context) error {
 		return err
 	}
 
+	projectViews := []ProjectView{}
+	for _, project := range projects {
+		projectViews = append(projectViews, CreateProjectView(project))
+	}
+
 	prompt := promptui.Select{
-		Label: "Select project to remove",
-		Items: projects,
+		Label:     "Select project to remove",
+		Items:     projectViews,
+		Templates: projectSelectTemplate,
 	}
 
 	i, _, err := prompt.Run()
@@ -129,9 +135,15 @@ func (p *Presenter) Select(ctx context.Context) error {
 		return err
 	}
 
+	projectViews := []ProjectView{}
+	for _, project := range projects {
+		projectViews = append(projectViews, CreateProjectView(project))
+	}
+
 	prompt := promptui.Select{
-		Label: "Select project",
-		Items: projects,
+		Label:     "Select project",
+		Items:     projectViews,
+		Templates: projectSelectTemplate,
 	}
 
 	i, _, err := prompt.Run()
