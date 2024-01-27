@@ -13,7 +13,7 @@ type UseCase interface {
 	GetUncompleteParentTasks(ctx context.Context) (entity.Tasks, error)
 	Add(ctx context.Context, task entity.Task) error
 	Start(ctx context.Context, id string) error
-	Stop(ctx context.Context) error
+	Stop(ctx context.Context) (entity.Task, error)
 	Remove(ctx context.Context, id string) error
 	Complete(ctx context.Context, id string) error
 }
@@ -92,7 +92,9 @@ func (u *useCase) Start(ctx context.Context, id string) error {
 	}
 
 	task.IsStarted = true
-
+	task.Histories = append(task.Histories, entity.TaskHistory{
+		StartedAt: time.Now(),
+	})
 	err = u.taskRepo.Update(ctx, task)
 	if err != nil {
 		return fmt.Errorf("error while updating task: %w", err)
@@ -101,10 +103,10 @@ func (u *useCase) Start(ctx context.Context, id string) error {
 	return nil
 }
 
-func (u *useCase) Stop(ctx context.Context) error {
+func (u *useCase) Stop(ctx context.Context) (stoppedTask entity.Task, err error) {
 	task, err := u.taskRepo.GetStartedTask(ctx)
 	if err != nil {
-		return fmt.Errorf("error while getting task: %w", err)
+		return entity.Task{}, fmt.Errorf("error while getting task: %w", err)
 	}
 
 	task.IsStarted = false
@@ -112,10 +114,10 @@ func (u *useCase) Stop(ctx context.Context) error {
 
 	err = u.taskRepo.Update(ctx, task)
 	if err != nil {
-		return fmt.Errorf("error while updating task: %w", err)
+		return entity.Task{}, fmt.Errorf("error while updating task: %w", err)
 	}
 
-	return nil
+	return task, nil
 }
 
 func (u *useCase) Remove(ctx context.Context, id string) error {

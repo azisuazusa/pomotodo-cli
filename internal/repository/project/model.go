@@ -24,28 +24,33 @@ type ProjectModel struct {
 }
 
 func (pm ProjectModel) ToEntity() (entity.Project, error) {
-	var integrationModels []IntegrationModel
-	err := json.Unmarshal([]byte(pm.Integrations.String), &integrationModels)
-	if err != nil {
-		return entity.Project{}, fmt.Errorf("failed to unmarshal integrations: %w", err)
+	project := entity.Project{
+		ID:          pm.ID,
+		Name:        pm.Name,
+		Description: pm.Description.String,
+		IsSelected:  pm.IsSelected,
 	}
 
-	var integrations []entity.Integration
-	for _, integration := range integrationModels {
-		integrations = append(integrations, entity.Integration{
-			IsEnabled: integration.IsEnabled,
-			Type:      entity.IntegrationType(integration.Type),
-			Details:   integration.Details,
-		})
+	if pm.Integrations.Valid {
+		var integrationModels []IntegrationModel
+		err := json.Unmarshal([]byte(pm.Integrations.String), &integrationModels)
+		if err != nil {
+			return entity.Project{}, fmt.Errorf("failed to unmarshal integrations: %w", err)
+		}
+
+		var integrations []entity.Integration
+		for _, integration := range integrationModels {
+			integrations = append(integrations, entity.Integration{
+				IsEnabled: integration.IsEnabled,
+				Type:      entity.IntegrationType(integration.Type),
+				Details:   integration.Details,
+			})
+		}
+
+		project.Integrations = integrations
 	}
 
-	return entity.Project{
-		ID:           pm.ID,
-		Name:         pm.Name,
-		Description:  pm.Description.String,
-		IsSelected:   pm.IsSelected,
-		Integrations: integrations,
-	}, nil
+	return project, nil
 }
 
 func CreateModel(entity entity.Project) (ProjectModel, error) {

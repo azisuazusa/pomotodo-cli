@@ -39,7 +39,6 @@ func (u *useCase) Upload(ctx context.Context) error {
 	}
 
 	if err == ErrSyncIntegrationNotFound {
-		fmt.Println("Integration not found, skipping upload")
 		return nil
 	}
 
@@ -57,7 +56,6 @@ func (u *useCase) Download(ctx context.Context) error {
 	}
 
 	if err == ErrSyncIntegrationNotFound {
-		fmt.Println("Integration not found, skipping download")
 		return nil
 	}
 

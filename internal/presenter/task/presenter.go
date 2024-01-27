@@ -287,9 +287,13 @@ func (p *Presenter) Remove(ctx context.Context) error {
 }
 
 func (p *Presenter) Stop(ctx context.Context) error {
-	if err := p.taskUseCase.Stop(ctx); err != nil {
+	stoppedTask, err := p.taskUseCase.Stop(ctx)
+	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
+	}
+
+	if stoppedTask.Integration.Type == entity.IntegrationTypeJIRA {
 	}
 
 	if err := p.settingUseCase.Upload(ctx); err != nil {
