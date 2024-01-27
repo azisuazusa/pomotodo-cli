@@ -145,8 +145,8 @@ func (ri *RepoImpl) Upsert(ctx context.Context, taskEntity entity.Task) error {
 }
 
 func (ri *RepoImpl) GetStartedTask(ctx context.Context) (entity.Task, error) {
-	query := `SELECT * FROM tasks WHERE is_started = ? LIMIT 1`
-	row := ri.db.QueryRowContext(ctx, query, true)
+	query := `SELECT * FROM tasks WHERE is_started = true LIMIT 1`
+	row := ri.db.QueryRowContext(ctx, query)
 
 	var task TaskModel
 	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration, &task.Histories)

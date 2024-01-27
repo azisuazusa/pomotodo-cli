@@ -469,18 +469,18 @@ func (s *RepoImplTestSuite) TestGetStartedTask() {
 		{
 			name: "failed to get started task",
 			mock: func() {
-				query := `SELECT * FROM tasks WHERE is_started = ? LIMIT 1`
-				s.db.ExpectQuery(query).WithArgs(true).WillReturnError(errors.New("any-error"))
+				query := `SELECT * FROM tasks WHERE is_started = true LIMIT 1`
+				s.db.ExpectQuery(query).WillReturnError(errors.New("any-error"))
 			},
 			expectedError: errors.New("any-error"),
 		},
 		{
 			name: "success",
 			mock: func() {
-				query := `SELECT * FROM tasks WHERE is_started = ? LIMIT 1`
+				query := `SELECT * FROM tasks WHERE is_started = true LIMIT 1`
 				rows := sqlmock.NewRows([]string{"id", "project_id", "name", "description", "is_started", "completed_at", "parent_task_id", "integration", "histories"}).
 					AddRow("1", "1", "name", "description", true, time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), "1", "{}", "[]")
-				s.db.ExpectQuery(query).WithArgs(true).WillReturnRows(rows)
+				s.db.ExpectQuery(query).WillReturnRows(rows)
 			},
 		},
 	}
