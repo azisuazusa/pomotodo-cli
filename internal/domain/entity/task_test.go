@@ -1,0 +1,29 @@
+package entity
+
+import (
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestTaskTimeSpent(t *testing.T) {
+	task := Task{
+		Histories: []TaskHistory{
+			{
+				StartedAt: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+				StoppedAt: time.Date(2020, 1, 1, 0, 0, 10, 0, time.UTC),
+			},
+			{
+				StartedAt: time.Date(2020, 1, 1, 0, 0, 10, 0, time.UTC),
+				StoppedAt: time.Date(2020, 1, 1, 0, 0, 20, 0, time.UTC),
+			},
+		},
+	}
+
+	expected := "20s"
+
+	actual := task.TimeSpent()
+
+	assert.Equal(t, expected, actual.String())
+}

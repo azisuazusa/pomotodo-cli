@@ -12,11 +12,14 @@ type ProjectRepository interface {
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (entity.Project, error)
 	Update(ctx context.Context, project entity.Project) error
+	SetSelectedProject(ctx context.Context, id string) error
 	GetSelectedProject(ctx context.Context) (entity.Project, error)
 }
 
 type TaskRepository interface {
 	Upsert(ctx context.Context, task entity.Task) error
+	GetStartedTask(ctx context.Context) (entity.Task, error)
+	Update(ctx context.Context, task entity.Task) error
 }
 
 type IntegrationRepository interface {

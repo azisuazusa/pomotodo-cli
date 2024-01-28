@@ -22,6 +22,109 @@ func (_m *TaskRepository) EXPECT() *TaskRepository_Expecter {
 	return &TaskRepository_Expecter{mock: &_m.Mock}
 }
 
+// GetStartedTask provides a mock function with given fields: ctx
+func (_m *TaskRepository) GetStartedTask(ctx context.Context) (entity.Task, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetStartedTask")
+	}
+
+	var r0 entity.Task
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (entity.Task, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) entity.Task); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(entity.Task)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TaskRepository_GetStartedTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetStartedTask'
+type TaskRepository_GetStartedTask_Call struct {
+	*mock.Call
+}
+
+// GetStartedTask is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *TaskRepository_Expecter) GetStartedTask(ctx interface{}) *TaskRepository_GetStartedTask_Call {
+	return &TaskRepository_GetStartedTask_Call{Call: _e.mock.On("GetStartedTask", ctx)}
+}
+
+func (_c *TaskRepository_GetStartedTask_Call) Run(run func(ctx context.Context)) *TaskRepository_GetStartedTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *TaskRepository_GetStartedTask_Call) Return(_a0 entity.Task, _a1 error) *TaskRepository_GetStartedTask_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *TaskRepository_GetStartedTask_Call) RunAndReturn(run func(context.Context) (entity.Task, error)) *TaskRepository_GetStartedTask_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Update provides a mock function with given fields: ctx, task
+func (_m *TaskRepository) Update(ctx context.Context, task entity.Task) error {
+	ret := _m.Called(ctx, task)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, entity.Task) error); ok {
+		r0 = rf(ctx, task)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TaskRepository_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type TaskRepository_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - task entity.Task
+func (_e *TaskRepository_Expecter) Update(ctx interface{}, task interface{}) *TaskRepository_Update_Call {
+	return &TaskRepository_Update_Call{Call: _e.mock.On("Update", ctx, task)}
+}
+
+func (_c *TaskRepository_Update_Call) Run(run func(ctx context.Context, task entity.Task)) *TaskRepository_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(entity.Task))
+	})
+	return _c
+}
+
+func (_c *TaskRepository_Update_Call) Return(_a0 error) *TaskRepository_Update_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TaskRepository_Update_Call) RunAndReturn(run func(context.Context, entity.Task) error) *TaskRepository_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Upsert provides a mock function with given fields: ctx, task
 func (_m *TaskRepository) Upsert(ctx context.Context, task entity.Task) error {
 	ret := _m.Called(ctx, task)

@@ -118,3 +118,19 @@ func (ri *RepoImpl) GetSelectedProject(ctx context.Context) (entity.Project, err
 
 	return projectEntity, nil
 }
+
+func (ri *RepoImpl) SetSelectedProject(ctx context.Context, id string) (err error) {
+	query := `UPDATE projects SET is_selected = ?`
+	_, err = ri.db.ExecContext(ctx, query, false)
+	if err != nil {
+		return fmt.Errorf("failed to update project: %w", err)
+	}
+
+	query = `UPDATE projects SET is_selected = ? WHERE id = ?`
+	_, err = ri.db.ExecContext(ctx, query, true, id)
+	if err != nil {
+		return fmt.Errorf("failed to update project: %w", err)
+	}
+
+	return nil
+}

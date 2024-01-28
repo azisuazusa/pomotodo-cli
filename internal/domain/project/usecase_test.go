@@ -154,24 +154,11 @@ func (t *UseCaseTestSuite) TestSelect() {
 		mockFunc    func(projectID string)
 	}{
 		{
-			name:        "failed to get project by id",
+			name:        "failed to select project",
 			projectID:   "any-project-id",
 			expectedErr: errors.New("any-error"),
 			mockFunc: func(projectID string) {
-				t.projectRepo.On("GetByID", context.Background(), projectID).Return(entity.Project{}, errors.New("any-error")).Once()
-			},
-		},
-		{
-			name:        "failed to update project",
-			projectID:   "any-project-id",
-			expectedErr: errors.New("any-error"),
-			mockFunc: func(projectID string) {
-				project := entity.Project{
-					ID: projectID,
-				}
-				t.projectRepo.On("GetByID", context.Background(), projectID).Return(project, nil).Once()
-				project.IsSelected = true
-				t.projectRepo.On("Update", context.Background(), project).Return(errors.New("any-error")).Once()
+				t.projectRepo.On("SetSelectedProject", context.Background(), projectID).Return(errors.New("any-error")).Once()
 			},
 		},
 		{
@@ -179,12 +166,7 @@ func (t *UseCaseTestSuite) TestSelect() {
 			projectID:   "any-project-id",
 			expectedErr: nil,
 			mockFunc: func(projectID string) {
-				project := entity.Project{
-					ID: projectID,
-				}
-				t.projectRepo.On("GetByID", context.Background(), projectID).Return(project, nil).Once()
-				project.IsSelected = true
-				t.projectRepo.On("Update", context.Background(), project).Return(nil).Once()
+				t.projectRepo.On("SetSelectedProject", context.Background(), projectID).Return(nil).Once()
 			},
 		},
 	}

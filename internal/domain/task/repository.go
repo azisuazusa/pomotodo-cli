@@ -14,6 +14,7 @@ type TaskRepository interface {
 	Delete(ctx context.Context, id string) error
 	GetByID(ctx context.Context, id string) (entity.Task, error)
 	GetStartedTask(ctx context.Context) (entity.Task, error)
+	SetStartedTask(ctx context.Context, task entity.Task) error
 }
 
 type SettingRepository interface {

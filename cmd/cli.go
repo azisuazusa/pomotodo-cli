@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
+	jiraDomain "github.com/azisuazusa/todo-cli/internal/domain/jira"
 	projectDomain "github.com/azisuazusa/todo-cli/internal/domain/project"
 	syncintegrationDomain "github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	taskDomain "github.com/azisuazusa/todo-cli/internal/domain/task"
@@ -31,23 +32,28 @@ func TodoCLI() *cli.App {
 		panic(err)
 	}
 
+	// Repositories
 	taskRepo := taskRepository.New(db)
 	projectRepo := projectRepository.New(db)
-	taskUseCase := taskDomain.New(taskRepo, projectRepo)
-
+	jiraRepo := jira.New()
 	settingIntegrationRepo := map[syncintegrationDomain.SyncIntegrationType]syncintegrationDomain.IntegrationRepository{
 		syncintegrationDomain.Dropbox: dropbox.New(),
 	}
-	settingUseCase := syncintegrationDomain.New(settingRepository.New(db), settingIntegrationRepo)
-
 	projectIntegrationRepo := map[entity.IntegrationType]projectDomain.IntegrationRepository{
-		entity.IntegrationTypeJIRA: jira.New(),
+		entity.IntegrationTypeJIRA: jiraRepo,
 	}
-	projectUseCase := projectDomain.New(projectRepo, projectIntegrationRepo, taskRepo)
 
-	taskPresenter := taskPresenter.New(taskUseCase, settingUseCase)
+	// UseCases
+	taskUseCase := taskDomain.New(taskRepo, projectRepo)
+	settingUseCase := syncintegrationDomain.New(settingRepository.New(db), settingIntegrationRepo)
+	projectUseCase := projectDomain.New(projectRepo, projectIntegrationRepo, taskRepo)
+	jiraUseCase := jiraDomain.New(jiraRepo, projectRepo, taskRepo)
+
+	// Presenters
+	taskPresenter := taskPresenter.New(taskUseCase, settingUseCase, jiraUseCase)
 	settingPresenter := settingPresenter.New(settingUseCase)
-	projectPresenter := projectPresenter.New(projectUseCase, settingUseCase)
+	projectPresenter := projectPresenter.New(projectUseCase, settingUseCase, taskUseCase)
+
 	commands := taskCLI(taskPresenter)
 	commands = append(commands, projectCLI(projectPresenter), settingCLI(settingPresenter), setupCLI(db))
 	return &cli.App{

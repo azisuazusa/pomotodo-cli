@@ -41,7 +41,7 @@ func (s *RepoImplTestSuite) TestGetUncompleteParentTasks() {
 			name:      "failed to get uncomplete parent tasks",
 			projectID: "1",
 			mock: func(projectID string) {
-				query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id = '' OR parent_task_id IS NULL`
+				query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND (parent_task_id = '' OR parent_task_id IS NULL)`
 				s.db.ExpectQuery(query).WithArgs(projectID).WillReturnError(errors.New("any-error"))
 			},
 			expectedError: errors.New("any-error"),
@@ -50,7 +50,7 @@ func (s *RepoImplTestSuite) TestGetUncompleteParentTasks() {
 			name:      "failed to scan task",
 			projectID: "1",
 			mock: func(projectID string) {
-				query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id = '' OR parent_task_id IS NULL`
+				query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND (parent_task_id = '' OR parent_task_id IS NULL)`
 				s.db.ExpectQuery(query).WithArgs(projectID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow("1"))
 			},
 			expectedError: errors.New("sql: expected 1 destination arguments in Scan, not 9"),
@@ -59,7 +59,7 @@ func (s *RepoImplTestSuite) TestGetUncompleteParentTasks() {
 			name:      "success",
 			projectID: "1",
 			mock: func(projectID string) {
-				query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id = '' OR parent_task_id IS NULL`
+				query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND (parent_task_id = '' OR parent_task_id IS NULL)`
 				s.db.ExpectQuery(query).WithArgs(projectID).WillReturnRows(sqlmock.NewRows([]string{"id", "project_id", "name", "description", "is_started", "completed_at", "parent_task_id", "integration", "histories"}).AddRow("1", "1", "name", "description", false, nil, nil, nil, nil))
 			},
 			expectedResult: entity.Tasks{
@@ -417,8 +417,8 @@ func (s *RepoImplTestSuite) TestUpsert() {
 			},
 			mock: func(task entity.Task) {
 				taskModel, _ := CreateModel(task)
-				query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?`
-				s.db.ExpectExec(query).WithArgs(taskModel.ID, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration).WillReturnError(errors.New("any-error"))
+				query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id = ?, name = ?, description = ?, parent_task_id = ?, integration = ?`
+				s.db.ExpectExec(query).WithArgs(taskModel.ID, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.ParentTaskID, taskModel.Integration).WillReturnError(errors.New("any-error"))
 			},
 			expectedError: errors.New("any-error"),
 		},
@@ -440,8 +440,8 @@ func (s *RepoImplTestSuite) TestUpsert() {
 			},
 			mock: func(task entity.Task) {
 				taskModel, _ := CreateModel(task)
-				query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?`
-				s.db.ExpectExec(query).WithArgs(taskModel.ID, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration).WillReturnResult(sqlmock.NewResult(1, 1))
+				query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id = ?, name = ?, description = ?, parent_task_id = ?, integration = ?`
+				s.db.ExpectExec(query).WithArgs(taskModel.ID, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.ParentTaskID, taskModel.Integration).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 		},
 	}

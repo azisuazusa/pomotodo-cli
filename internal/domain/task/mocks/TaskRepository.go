@@ -347,6 +347,53 @@ func (_c *TaskRepository_Insert_Call) RunAndReturn(run func(context.Context, ent
 	return _c
 }
 
+// SetStartedTask provides a mock function with given fields: ctx, _a1
+func (_m *TaskRepository) SetStartedTask(ctx context.Context, _a1 entity.Task) error {
+	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetStartedTask")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, entity.Task) error); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TaskRepository_SetStartedTask_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetStartedTask'
+type TaskRepository_SetStartedTask_Call struct {
+	*mock.Call
+}
+
+// SetStartedTask is a helper method to define mock.On call
+//   - ctx context.Context
+//   - _a1 entity.Task
+func (_e *TaskRepository_Expecter) SetStartedTask(ctx interface{}, _a1 interface{}) *TaskRepository_SetStartedTask_Call {
+	return &TaskRepository_SetStartedTask_Call{Call: _e.mock.On("SetStartedTask", ctx, _a1)}
+}
+
+func (_c *TaskRepository_SetStartedTask_Call) Run(run func(ctx context.Context, _a1 entity.Task)) *TaskRepository_SetStartedTask_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(entity.Task))
+	})
+	return _c
+}
+
+func (_c *TaskRepository_SetStartedTask_Call) Return(_a0 error) *TaskRepository_SetStartedTask_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TaskRepository_SetStartedTask_Call) RunAndReturn(run func(context.Context, entity.Task) error) *TaskRepository_SetStartedTask_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *TaskRepository) Update(ctx context.Context, _a1 entity.Task) error {
 	ret := _m.Called(ctx, _a1)

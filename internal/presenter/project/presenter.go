@@ -8,6 +8,7 @@ import (
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
 	"github.com/azisuazusa/todo-cli/internal/domain/project"
 	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
+	"github.com/azisuazusa/todo-cli/internal/domain/task"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/manifoldco/promptui"
 )
@@ -15,12 +16,14 @@ import (
 type Presenter struct {
 	projectUseCase project.UseCase
 	settingUseCase syncintegration.UseCase
+	taskUseCase    task.UseCase
 }
 
-func New(projectUseCase project.UseCase, settingUseCase syncintegration.UseCase) *Presenter {
+func New(projectUseCase project.UseCase, settingUseCase syncintegration.UseCase, taskUseCase task.UseCase) *Presenter {
 	return &Presenter{
 		projectUseCase: projectUseCase,
 		settingUseCase: settingUseCase,
+		taskUseCase:    taskUseCase,
 	}
 }
 
@@ -152,8 +155,13 @@ func (p *Presenter) Select(ctx context.Context) error {
 		return err
 	}
 
-	err = p.projectUseCase.Select(ctx, projects[i].ID)
-	if err != nil {
+	// Makesure there is no task running before change project
+	if err = p.taskUseCase.Stop(ctx); err != nil && err != task.ErrTaskNotFound {
+		fmt.Printf("Error: %v\n", err)
+		return err
+	}
+
+	if err = p.projectUseCase.Select(ctx, projects[i].ID); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}

@@ -57,15 +57,9 @@ func (u *useCase) Delete(ctx context.Context, id string) error {
 }
 
 func (u *useCase) Select(ctx context.Context, id string) error {
-	project, err := u.projectRepo.GetByID(ctx, id)
+	err := u.projectRepo.SetSelectedProject(ctx, id)
 	if err != nil {
-		return fmt.Errorf("error while getting project: %w", err)
-	}
-
-	project.IsSelected = true
-	err = u.projectRepo.Update(ctx, project)
-	if err != nil {
-		return fmt.Errorf("error while updating project: %w", err)
+		return fmt.Errorf("error selecting project %w", err)
 	}
 
 	return nil

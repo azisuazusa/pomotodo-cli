@@ -31,7 +31,7 @@ func CreateProjectView(p entity.Project) ProjectView {
 	}
 
 	if p.IsSelected {
-		projectName = fmt.Sprintf("%s (Started)", projectName)
+		projectName = fmt.Sprintf("%s (Selected)", projectName)
 	}
 
 	return ProjectView{

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
+	"github.com/azisuazusa/todo-cli/internal/domain/jira"
 	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/azisuazusa/todo-cli/internal/domain/task"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -15,12 +17,14 @@ import (
 type Presenter struct {
 	taskUseCase    task.UseCase
 	settingUseCase syncintegration.UseCase
+	jiraUseCase    jira.UseCase
 }
 
-func New(taskUseCase task.UseCase, settingUseCase syncintegration.UseCase) *Presenter {
+func New(taskUseCase task.UseCase, settingUseCase syncintegration.UseCase, jiraUseCase jira.UseCase) *Presenter {
 	return &Presenter{
 		taskUseCase:    taskUseCase,
 		settingUseCase: settingUseCase,
+		jiraUseCase:    jiraUseCase,
 	}
 }
 
@@ -193,6 +197,12 @@ func (p *Presenter) Start(ctx context.Context) error {
 		return err
 	}
 
+	// Makesure that no other task is running
+	if err = p.taskUseCase.Stop(ctx); err != nil && err != task.ErrTaskNotFound {
+		fmt.Printf("Error: %v\n", err)
+		return err
+	}
+
 	if err = p.taskUseCase.Start(ctx, tasks[taskIndex].ID); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
@@ -242,7 +252,46 @@ func (p *Presenter) Complete(ctx context.Context) error {
 		return err
 	}
 
+	if task[taskIndex].Integration.Type == entity.IntegrationTypeJIRA {
+		if err := p.addWorklogJIRA(ctx, task[taskIndex].ID); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return err
+		}
+	}
+
 	fmt.Println("Task completed successfully")
+
+	return nil
+}
+
+func (p *Presenter) addWorklogJIRA(ctx context.Context, taskID string) error {
+	task, err := p.taskUseCase.GetByID(ctx, taskID)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return err
+	}
+
+	prompt := promptui.Prompt{
+		Label:   "Add Worklog",
+		Default: task.TimeSpent().Round(time.Minute).String(),
+	}
+
+	timeSpentStr, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return err
+	}
+
+	timeSpent, err := time.ParseDuration(timeSpentStr)
+	if err != nil {
+		fmt.Printf("Parse duration failed %v\n", err)
+		return err
+	}
+
+	if err := p.jiraUseCase.AddWorklog(ctx, task, timeSpent); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return err
+	}
 
 	return nil
 }
@@ -287,13 +336,10 @@ func (p *Presenter) Remove(ctx context.Context) error {
 }
 
 func (p *Presenter) Stop(ctx context.Context) error {
-	stoppedTask, err := p.taskUseCase.Stop(ctx)
+	err := p.taskUseCase.Stop(ctx)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
-	}
-
-	if stoppedTask.Integration.Type == entity.IntegrationTypeJIRA {
 	}
 
 	if err := p.settingUseCase.Upload(ctx); err != nil {

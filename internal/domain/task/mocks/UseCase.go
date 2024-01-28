@@ -116,6 +116,63 @@ func (_c *UseCase_Complete_Call) RunAndReturn(run func(context.Context, string) 
 	return _c
 }
 
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *UseCase) GetByID(ctx context.Context, id string) (entity.Task, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
+	var r0 entity.Task
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (entity.Task, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) entity.Task); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(entity.Task)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UseCase_GetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByID'
+type UseCase_GetByID_Call struct {
+	*mock.Call
+}
+
+// GetByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *UseCase_Expecter) GetByID(ctx interface{}, id interface{}) *UseCase_GetByID_Call {
+	return &UseCase_GetByID_Call{Call: _e.mock.On("GetByID", ctx, id)}
+}
+
+func (_c *UseCase_GetByID_Call) Run(run func(ctx context.Context, id string)) *UseCase_GetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *UseCase_GetByID_Call) Return(_a0 entity.Task, _a1 error) *UseCase_GetByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *UseCase_GetByID_Call) RunAndReturn(run func(context.Context, string) (entity.Task, error)) *UseCase_GetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetUncompleteParentTasks provides a mock function with given fields: ctx
 func (_m *UseCase) GetUncompleteParentTasks(ctx context.Context) (entity.Tasks, error) {
 	ret := _m.Called(ctx)

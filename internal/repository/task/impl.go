@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
+	"github.com/azisuazusa/todo-cli/internal/domain/task"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -19,7 +20,7 @@ func New(db *sql.DB) *RepoImpl {
 
 func (ri *RepoImpl) GetUncompleteParentTasks(ctx context.Context, projectID string) (entity.Tasks, error) {
 	var tasks []entity.Task
-	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND parent_task_id = '' OR parent_task_id IS NULL`
+	query := `SELECT * FROM tasks WHERE completed_at IS NULL AND project_id = ? AND (parent_task_id = '' OR parent_task_id IS NULL)`
 	rows, err := ri.db.QueryContext(ctx, query, projectID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
@@ -135,8 +136,8 @@ func (ri *RepoImpl) Upsert(ctx context.Context, taskEntity entity.Task) error {
 		return fmt.Errorf("failed to create task model: %w", err)
 	}
 
-	query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?`
-	_, err = ri.db.ExecContext(ctx, query, task.ID, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration)
+	query := `INSERT INTO tasks (id, project_id, name, description, is_started, completed_at, parent_task_id, integration) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET project_id = ?, name = ?, description = ?, parent_task_id = ?, integration = ?`
+	_, err = ri.db.ExecContext(ctx, query, task.ID, task.ProjectID, task.Name, task.Description, task.IsStarted, task.CompletedAt, task.ParentTaskID, task.Integration, task.ProjectID, task.Name, task.Description, task.ParentTaskID, task.Integration)
 	if err != nil {
 		return fmt.Errorf("failed to upsert task: %w", err)
 	}
@@ -148,16 +149,35 @@ func (ri *RepoImpl) GetStartedTask(ctx context.Context) (entity.Task, error) {
 	query := `SELECT * FROM tasks WHERE is_started = true LIMIT 1`
 	row := ri.db.QueryRowContext(ctx, query)
 
-	var task TaskModel
-	err := row.Scan(&task.ID, &task.ProjectID, &task.Name, &task.Description, &task.IsStarted, &task.CompletedAt, &task.ParentTaskID, &task.Integration, &task.Histories)
-	if err != nil {
+	var taskModel TaskModel
+	err := row.Scan(&taskModel.ID, &taskModel.ProjectID, &taskModel.Name, &taskModel.Description, &taskModel.IsStarted, &taskModel.CompletedAt, &taskModel.ParentTaskID, &taskModel.Integration, &taskModel.Histories)
+	if err != nil && err != sql.ErrNoRows {
 		return entity.Task{}, fmt.Errorf("failed to scan task: %w", err)
 	}
 
-	taskEntity, err := task.ToEntity()
+	if err == sql.ErrNoRows {
+		return entity.Task{}, task.ErrTaskNotFound
+	}
+
+	taskEntity, err := taskModel.ToEntity()
 	if err != nil {
 		return entity.Task{}, fmt.Errorf("failed to convert task to entity: %w", err)
 	}
 
 	return taskEntity, nil
+}
+
+func (ri *RepoImpl) SetStartedTask(ctx context.Context, task entity.Task) error {
+	taskModel, err := CreateModel(task)
+	if err != nil {
+		return fmt.Errorf("failed to create task model: %w", err)
+	}
+
+	query := `UPDATE tasks SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?, histories = ? WHERE id = ?`
+	_, err = ri.db.ExecContext(ctx, query, taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.Histories, taskModel.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update task: %w", err)
+	}
+
+	return nil
 }

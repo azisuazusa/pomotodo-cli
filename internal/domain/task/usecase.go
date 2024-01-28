@@ -3,7 +3,6 @@ package task
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/entity"
 )
@@ -13,9 +12,10 @@ type UseCase interface {
 	GetUncompleteParentTasks(ctx context.Context) (entity.Tasks, error)
 	Add(ctx context.Context, task entity.Task) error
 	Start(ctx context.Context, id string) error
-	Stop(ctx context.Context) (entity.Task, error)
+	Stop(ctx context.Context) error
 	Remove(ctx context.Context, id string) error
 	Complete(ctx context.Context, id string) error
+	GetByID(ctx context.Context, id string) (entity.Task, error)
 }
 
 type useCase struct {
@@ -91,33 +91,28 @@ func (u *useCase) Start(ctx context.Context, id string) error {
 		return fmt.Errorf("error while getting task: %w", err)
 	}
 
-	task.IsStarted = true
-	task.Histories = append(task.Histories, entity.TaskHistory{
-		StartedAt: time.Now(),
-	})
+	task.Start()
+	err = u.taskRepo.SetStartedTask(ctx, task)
+	if err != nil {
+		return fmt.Errorf("error while setting started task: %w", err)
+	}
+
+	return nil
+}
+
+func (u *useCase) Stop(ctx context.Context) (err error) {
+	task, err := u.taskRepo.GetStartedTask(ctx)
+	if err != nil {
+		return fmt.Errorf("error while getting started task: %w", err)
+	}
+
+	task.Stop()
 	err = u.taskRepo.Update(ctx, task)
 	if err != nil {
 		return fmt.Errorf("error while updating task: %w", err)
 	}
 
 	return nil
-}
-
-func (u *useCase) Stop(ctx context.Context) (stoppedTask entity.Task, err error) {
-	task, err := u.taskRepo.GetStartedTask(ctx)
-	if err != nil {
-		return entity.Task{}, fmt.Errorf("error while getting task: %w", err)
-	}
-
-	task.IsStarted = false
-	task.Histories[len(task.Histories)-1].StoppedAt = time.Now()
-
-	err = u.taskRepo.Update(ctx, task)
-	if err != nil {
-		return entity.Task{}, fmt.Errorf("error while updating task: %w", err)
-	}
-
-	return task, nil
 }
 
 func (u *useCase) Remove(ctx context.Context, id string) error {
@@ -135,15 +130,20 @@ func (u *useCase) Complete(ctx context.Context, id string) error {
 		return fmt.Errorf("error while getting task: %w", err)
 	}
 
-	timeNow := time.Now()
-	task.CompletedAt = timeNow
-	task.IsStarted = false
-	task.Histories[len(task.Histories)-1].StoppedAt = timeNow
-
+	task.Complete()
 	err = u.taskRepo.Update(ctx, task)
 	if err != nil {
 		return fmt.Errorf("error while updating task: %w", err)
 	}
 
 	return nil
+}
+
+func (u *useCase) GetByID(ctx context.Context, id string) (entity.Task, error) {
+	task, err := u.taskRepo.GetByID(ctx, id)
+	if err != nil {
+		return entity.Task{}, fmt.Errorf("error while getting task: %w", err)
+	}
+
+	return task, nil
 }

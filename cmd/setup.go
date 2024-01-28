@@ -51,8 +51,8 @@ func setupCLI(db *sql.DB) *cli.Command {
 					parent_task_id VARCHAR,
 					integration TEXT,
 					histories TEXT,
-					FOREIGN KEY (project_id) REFERENCES projects(id),
-					FOREIGN KEY (parent_task_id) REFERENCES tasks(id)
+					FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+					FOREIGN KEY (parent_task_id) REFERENCES tasks(id) ON DELETE CASCADE
 				);
 
 				CREATE TABLE IF NOT EXISTS settings (
