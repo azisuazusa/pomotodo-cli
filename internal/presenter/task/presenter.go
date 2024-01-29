@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -198,7 +199,7 @@ func (p *Presenter) Start(ctx context.Context) error {
 	}
 
 	// Makesure that no other task is running
-	if err = p.taskUseCase.Stop(ctx); err != nil && err != task.ErrTaskNotFound {
+	if err = p.taskUseCase.Stop(ctx); err != nil && errors.Unwrap(err) != task.ErrTaskNotFound {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}

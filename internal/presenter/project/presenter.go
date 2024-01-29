@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -156,7 +157,7 @@ func (p *Presenter) Select(ctx context.Context) error {
 	}
 
 	// Makesure there is no task running before change project
-	if err = p.taskUseCase.Stop(ctx); err != nil && err != task.ErrTaskNotFound {
+	if err = p.taskUseCase.Stop(ctx); err != nil && errors.Unwrap(err) != task.ErrTaskNotFound {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
