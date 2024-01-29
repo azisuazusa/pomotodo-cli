@@ -88,8 +88,8 @@ func (ri *RepoImpl) AddWorklog(ctx context.Context, issueID, taskName string, ti
 	}
 
 	worklog := jira.WorklogRecord{
-		Comment:   taskName,
-		TimeSpent: timeSpent.String(),
+		Comment:          taskName,
+		TimeSpentSeconds: int(timeSpent.Seconds()),
 	}
 
 	_, _, err = client.Issue.AddWorklogRecordWithContext(ctx, issueID, &worklog)
