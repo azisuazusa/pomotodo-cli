@@ -32,6 +32,10 @@ func (u *useCase) AddWorklog(ctx context.Context, task entity.Task, timeSpent ti
 		return err
 	}
 
+	if len(project.Integrations) == 0 {
+		return fmt.Errorf("no integration found")
+	}
+
 	integrationEntity := entity.Integration{}
 	for _, integration := range project.Integrations {
 		if integration.Type == entity.IntegrationTypeJIRA {

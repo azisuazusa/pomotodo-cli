@@ -71,6 +71,11 @@ func (u *useCase) SyncTasks(ctx context.Context) error {
 		return fmt.Errorf("error while getting selected project: %w", err)
 	}
 
+	if len(project.Integrations) == 0 {
+		fmt.Println("no integration found")
+		return nil
+	}
+
 	var tasks entity.Tasks
 	for _, integration := range project.Integrations {
 		if integration.IsEnabled {

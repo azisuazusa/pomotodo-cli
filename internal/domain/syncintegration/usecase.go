@@ -12,14 +12,14 @@ type UseCase interface {
 }
 
 type useCase struct {
-	settingRepo     SettingRepository
-	integrationRepo map[SyncIntegrationType]IntegrationRepository
+	settingRepo      SettingRepository
+	integrationRepos map[SyncIntegrationType]IntegrationRepository
 }
 
 func New(settingRepo SettingRepository, integrationRepo map[SyncIntegrationType]IntegrationRepository) UseCase {
 	return &useCase{
-		settingRepo:     settingRepo,
-		integrationRepo: integrationRepo,
+		settingRepo:      settingRepo,
+		integrationRepos: integrationRepo,
 	}
 }
 
@@ -42,7 +42,7 @@ func (u *useCase) Upload(ctx context.Context) error {
 		return nil
 	}
 
-	if err = u.integrationRepo[integration.Type].Upload(ctx, integration); err != nil {
+	if err = u.integrationRepos[integration.Type].Upload(ctx, integration); err != nil {
 		return fmt.Errorf("error while uploading: %w", err)
 	}
 
@@ -59,7 +59,7 @@ func (u *useCase) Download(ctx context.Context) error {
 		return nil
 	}
 
-	if err = u.integrationRepo[integration.Type].Download(ctx, integration); err != nil {
+	if err = u.integrationRepos[integration.Type].Download(ctx, integration); err != nil {
 		return fmt.Errorf("error while downloading: %w", err)
 	}
 
