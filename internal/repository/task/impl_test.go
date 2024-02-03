@@ -498,3 +498,71 @@ func (s *RepoImplTestSuite) TestGetStartedTask() {
 		})
 	}
 }
+
+func (s *RepoImplTestSuite) TestSetStartedtask() {
+	tests := []struct {
+		name          string
+		task          entity.Task
+		mock          func(task entity.Task)
+		expectedError error
+	}{
+		{
+			name: "failed to set started task",
+			task: entity.Task{
+				ID:           "1",
+				ProjectID:    "1",
+				Name:         "name",
+				Description:  "description",
+				IsStarted:    false,
+				CompletedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				ParentTaskID: "1",
+				Integration: entity.TaskIntegration{
+					ID:   "1",
+					Type: entity.IntegrationType("JIRA"),
+				},
+				Histories: []entity.TaskHistory(nil),
+			},
+			mock: func(task entity.Task) {
+				taskModel, _ := CreateModel(task)
+				query := `UPDATE tasks SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?, histories = ? WHERE id = ?`
+				s.db.ExpectExec(query).WithArgs(taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.Histories, taskModel.ID).WillReturnError(errors.New("any-error"))
+			},
+			expectedError: errors.New("any-error"),
+		},
+		{
+			name: "success",
+			task: entity.Task{
+				ID:           "1",
+				ProjectID:    "1",
+				Name:         "name",
+				Description:  "description",
+				IsStarted:    false,
+				CompletedAt:  time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				ParentTaskID: "1",
+				Integration: entity.TaskIntegration{
+					ID:   "1",
+					Type: entity.IntegrationType("JIRA"),
+				},
+				Histories: []entity.TaskHistory(nil),
+			},
+			mock: func(task entity.Task) {
+				taskModel, _ := CreateModel(task)
+				query := `UPDATE tasks SET project_id = ?, name = ?, description = ?, is_started = ?, completed_at = ?, parent_task_id = ?, integration = ?, histories = ? WHERE id = ?`
+				s.db.ExpectExec(query).WithArgs(taskModel.ProjectID, taskModel.Name, taskModel.Description, taskModel.IsStarted, taskModel.CompletedAt, taskModel.ParentTaskID, taskModel.Integration, taskModel.Histories, taskModel.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			tt.mock(tt.task)
+
+			err := s.repoImpl.SetStartedTask(context.Background(), tt.task)
+
+			if err != nil {
+				err = errors.Unwrap(err)
+			}
+			s.Equal(tt.expectedError, err)
+		})
+	}
+}
