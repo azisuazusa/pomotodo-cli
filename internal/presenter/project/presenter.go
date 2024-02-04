@@ -15,16 +15,16 @@ import (
 )
 
 type Presenter struct {
-	projectUseCase project.UseCase
-	settingUseCase syncintegration.UseCase
-	taskUseCase    task.UseCase
+	projectUseCase         project.UseCase
+	syncintegrationUseCase syncintegration.UseCase
+	taskUseCase            task.UseCase
 }
 
 func New(projectUseCase project.UseCase, settingUseCase syncintegration.UseCase, taskUseCase task.UseCase) *Presenter {
 	return &Presenter{
-		projectUseCase: projectUseCase,
-		settingUseCase: settingUseCase,
-		taskUseCase:    taskUseCase,
+		projectUseCase:         projectUseCase,
+		syncintegrationUseCase: settingUseCase,
+		taskUseCase:            taskUseCase,
 	}
 }
 
@@ -82,7 +82,7 @@ func (p *Presenter) Add(ctx context.Context) error {
 		return err
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -122,7 +122,7 @@ func (p *Presenter) Remove(ctx context.Context) error {
 		return err
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -167,7 +167,7 @@ func (p *Presenter) Select(ctx context.Context) error {
 		return err
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -235,7 +235,7 @@ func (p *Presenter) AddIntegration(ctx context.Context) error {
 		}
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -318,7 +318,7 @@ func (p *Presenter) RemoveIntegration(ctx context.Context) (err error) {
 		return err
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -357,7 +357,7 @@ func (p *Presenter) EnableIntegration(ctx context.Context) error {
 		return err
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -396,7 +396,7 @@ func (p *Presenter) DisableIntegration(ctx context.Context) error {
 		return err
 	}
 
-	if err = p.settingUseCase.Upload(ctx); err != nil {
+	if err = p.syncintegrationUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
