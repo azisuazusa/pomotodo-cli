@@ -47,10 +47,12 @@ func (u *useCase) AddWorklog(ctx context.Context, task entity.Task, timeSpent ti
 	}
 
 	if task.ParentTaskID != "" {
-		task, err = u.taskRepo.GetByID(ctx, task.ParentTaskID)
-		if err != nil {
+		parentTask, errGetParentTask := u.taskRepo.GetByID(ctx, task.ParentTaskID)
+		if errGetParentTask != nil {
+			err = errGetParentTask
 			return fmt.Errorf("error while getting parent task: %w", err)
 		}
+		task.ID = parentTask.ID
 	}
 
 	err = u.jiraRepo.AddWorklog(ctx, task.ID, task.Name, timeSpent, integrationEntity)
