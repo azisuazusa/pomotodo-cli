@@ -18,6 +18,7 @@ require (
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dropbox/godropbox v0.0.0-20230623171840-436d2007a9fd // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect

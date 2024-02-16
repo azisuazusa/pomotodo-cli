@@ -3,14 +3,23 @@ package setting
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/manifoldco/promptui"
 )
+
+const DROPBOX_API_KEY = "aau1qknsx7d5zq7"
 
 type Presenter struct {
 	settingUseCase syncintegration.UseCase
@@ -40,13 +49,9 @@ func (p *Presenter) SetSyncIntegration(ctx context.Context) error {
 	}
 
 	if integration.Type == syncintegration.Dropbox {
-		prompt := promptui.Prompt{
-			Label: "Dropbox token",
-		}
 
-		token, promptErr := prompt.Run()
-		if promptErr != nil {
-			err = promptErr
+		token, err := p.dropboxIntegration(ctx)
+		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return err
 		}
@@ -165,4 +170,100 @@ func calculateChecksum(file []byte) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+func (p *Presenter) dropboxIntegration(ctx context.Context) (token string, err error) {
+	codeVerifier, err := generateCodeVerifier()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	codeChallenge := generateCodeChallenge(codeVerifier)
+	authorizeURL := constructAuthURL(codeChallenge)
+
+	fmt.Printf("1. Go to %s\n", authorizeURL)
+	fmt.Println("2. Click on 'Allow' (you might have to log in first)")
+	fmt.Println("3. Copy the code that appears on the next page")
+	fmt.Println("4. Paste the code here")
+
+	prompt := promptui.Prompt{
+		Label: "Dropbox Code",
+	}
+
+	code, promptErr := prompt.Run()
+	if promptErr != nil {
+		err = promptErr
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	data := url.Values{}
+	data.Set("code", code)
+	data.Set("grant_type", "authorization_code")
+	data.Set("client_id", DROPBOX_API_KEY)
+	data.Set("code_verifier", codeVerifier)
+	req, err := http.NewRequest("POST", "https://api.dropboxapi.com/oauth2/token", nil)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Body = io.NopCloser(strings.NewReader(data.Encode()))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	if resp.StatusCode != 200 {
+		fmt.Printf("Error: %v\n", string(body))
+		err = errors.New("Error getting access token")
+		return
+	}
+
+	var dropboxTokenResponse struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		TokenType    string `json:"token_type"`
+		ExpiresIn    int    `json:"expires_in"`
+	}
+
+	if err = json.Unmarshal(body, &dropboxTokenResponse); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	token = dropboxTokenResponse.AccessToken
+
+	return
+}
+func generateCodeVerifier() (string, error) {
+	verifier := make([]byte, 64)
+	_, err := io.ReadFull(rand.Reader, verifier)
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(verifier), nil
+}
+
+func generateCodeChallenge(verifier string) string {
+	hashed := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(hashed[:])
+}
+
+func constructAuthURL(codeChallenge string) (url string) {
+	authorizeURL := "https://www.dropbox.com/oauth2/authorize"
+	urlParams := fmt.Sprintf("response_type=code&client_id=%s&code_challenge=%s&code_challenge_method=S256&token_access_type=offline", DROPBOX_API_KEY, codeChallenge)
+	url = fmt.Sprintf("%s?%s", authorizeURL, urlParams)
+	return
 }

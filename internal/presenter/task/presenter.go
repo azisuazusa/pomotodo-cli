@@ -253,7 +253,18 @@ func (p *Presenter) Complete(ctx context.Context) error {
 		return err
 	}
 
-	if task[taskIndex].Integration.Type == entity.IntegrationTypeJIRA {
+	currentTask := task[taskIndex]
+	integrationType := currentTask.Integration.Type
+	if currentTask.ParentTaskID != "" {
+		parentTask, err := p.taskUseCase.GetByID(ctx, currentTask.ParentTaskID)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return err
+		}
+		integrationType = parentTask.Integration.Type
+	}
+
+	if integrationType == entity.IntegrationTypeJIRA {
 		if err := p.addWorklogJIRA(ctx, task[taskIndex].ID); err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return err
