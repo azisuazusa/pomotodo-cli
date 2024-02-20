@@ -63,6 +63,7 @@ func (ri *RepoImpl) Upload(ctx context.Context, integrationEntity syncintegratio
 	}
 
 	uploadArg := files.NewUploadArg("/.todo-cli.db")
+	uploadArg.CommitInfo.Mode.Tag = files.WriteModeOverwrite
 	_, err = fileDbx.Upload(uploadArg, file)
 	if err != nil {
 		return fmt.Errorf("error while uploading file: %w", err)
