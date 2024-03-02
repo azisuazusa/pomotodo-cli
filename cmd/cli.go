@@ -33,11 +33,12 @@ func TodoCLI() *cli.App {
 	}
 
 	// Repositories
+	settingRepo := settingRepository.New(db)
 	taskRepo := taskRepository.New(db)
 	projectRepo := projectRepository.New(db)
 	jiraRepo := jira.New()
 	settingIntegrationRepo := map[syncintegrationDomain.SyncIntegrationType]syncintegrationDomain.IntegrationRepository{
-		syncintegrationDomain.Dropbox: dropbox.New(),
+		syncintegrationDomain.Dropbox: dropbox.New(settingRepo),
 	}
 	projectIntegrationRepo := map[entity.IntegrationType]projectDomain.IntegrationRepository{
 		entity.IntegrationTypeJIRA: jiraRepo,
@@ -45,7 +46,7 @@ func TodoCLI() *cli.App {
 
 	// UseCases
 	taskUseCase := taskDomain.New(taskRepo, projectRepo)
-	settingUseCase := syncintegrationDomain.New(settingRepository.New(db), settingIntegrationRepo)
+	settingUseCase := syncintegrationDomain.New(settingRepo, settingIntegrationRepo)
 	projectUseCase := projectDomain.New(projectRepo, projectIntegrationRepo, taskRepo)
 	jiraUseCase := jiraDomain.New(jiraRepo, projectRepo, taskRepo)
 

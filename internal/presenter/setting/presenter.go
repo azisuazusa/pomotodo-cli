@@ -56,15 +56,13 @@ func (p *Presenter) SetSyncIntegration(ctx context.Context) error {
 			return err
 		}
 
-		integration.Details["token"] = token
+		integration.Details["token"] = token.AccessToken
+		integration.Details["refresh_token"] = token.RefreshToken
+		integration.Details["token_type"] = token.TokenType
+		integration.Details["expires_in"] = fmt.Sprintf("%d", token.ExpiresIn)
 	}
 
 	if err = p.settingUseCase.SetSyncIntegration(ctx, integration); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return err
-	}
-
-	if err = p.settingUseCase.Upload(ctx); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
@@ -172,7 +170,7 @@ func calculateChecksum(file []byte) (string, error) {
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
-func (p *Presenter) dropboxIntegration(ctx context.Context) (token string, err error) {
+func (p *Presenter) dropboxIntegration(ctx context.Context) (token DropboxTokenResponse, err error) {
 	codeVerifier, err := generateCodeVerifier()
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -231,22 +229,15 @@ func (p *Presenter) dropboxIntegration(ctx context.Context) (token string, err e
 		return
 	}
 
-	var dropboxTokenResponse struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-		TokenType    string `json:"token_type"`
-		ExpiresIn    int    `json:"expires_in"`
-	}
-
-	if err = json.Unmarshal(body, &dropboxTokenResponse); err != nil {
+	var response DropboxTokenResponse
+	if err = json.Unmarshal(body, &response); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
-	token = dropboxTokenResponse.AccessToken
-
-	return
+	return response, nil
 }
+
 func generateCodeVerifier() (string, error) {
 	verifier := make([]byte, 64)
 	_, err := io.ReadFull(rand.Reader, verifier)

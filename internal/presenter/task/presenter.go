@@ -145,6 +145,7 @@ func (p *Presenter) AddSubTask(ctx context.Context) error {
 		Label:     "Select Parent Task",
 		Items:     views,
 		Templates: taskSelectTemplate,
+		Size:      10,
 	}
 
 	parentTaskIndex, _, err := selectPrompt.Run()
@@ -190,6 +191,7 @@ func (p *Presenter) Start(ctx context.Context) error {
 		Label:     "Select Task",
 		Items:     views,
 		Templates: taskSelectTemplate,
+		Size:      10,
 	}
 
 	taskIndex, _, err := selectPrompt.Run()
@@ -235,6 +237,7 @@ func (p *Presenter) Complete(ctx context.Context) error {
 		Label:     "Select Task",
 		Items:     views,
 		Templates: taskSelectTemplate,
+		Size:      10,
 	}
 
 	taskIndex, _, err := selectPrompt.Run()
@@ -324,6 +327,7 @@ func (p *Presenter) Remove(ctx context.Context) error {
 		Label:     "Select Task",
 		Items:     views,
 		Templates: taskSelectTemplate,
+		Size:      10,
 	}
 
 	taskIndex, _, err := selectPrompt.Run()

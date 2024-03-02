@@ -2,19 +2,33 @@ package dropbox
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	syncintegrationDomain "github.com/azisuazusa/todo-cli/internal/domain/syncintegration"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox"
 	"github.com/dropbox/dropbox-sdk-go-unofficial/v6/dropbox/files"
 )
 
-type RepoImpl struct{}
+const DROPBOX_API_KEY = "aau1qknsx7d5zq7"
 
-func New() *RepoImpl {
-	return &RepoImpl{}
+type SyncIntegrationRepo interface {
+	SetSyncIntegration(ctx context.Context, integration syncintegrationDomain.SyncIntegration) error
+}
+
+type RepoImpl struct {
+	syncIntegrationRepo SyncIntegrationRepo
+}
+
+func New(syncIntegrationRepo SyncIntegrationRepo) *RepoImpl {
+	return &RepoImpl{
+		syncIntegrationRepo: syncIntegrationRepo,
+	}
 }
 
 func (ri *RepoImpl) Download(ctx context.Context, integrationEntity syncintegrationDomain.SyncIntegration) error {
@@ -67,6 +81,59 @@ func (ri *RepoImpl) Upload(ctx context.Context, integrationEntity syncintegratio
 	_, err = fileDbx.Upload(uploadArg, file)
 	if err != nil {
 		return fmt.Errorf("error while uploading file: %w", err)
+	}
+
+	return nil
+}
+
+func (ri *RepoImpl) refreshToken(ctx context.Context, integrationEntity syncintegrationDomain.SyncIntegration) error {
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+	data.Set("refresh_token", integrationEntity.Details["refresh_token"])
+	data.Set("client_id", DROPBOX_API_KEY)
+
+	req, err := http.NewRequest("POST", "https://api.dropbox.com/oauth2/token", nil)
+	if err != nil {
+		return fmt.Errorf("error while creating request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Body = io.NopCloser(strings.NewReader(data.Encode()))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error while making request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading response: %w", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("error getting access token: %s", string(body))
+	}
+
+	var dropboxTokenResponse struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		TokenType    string `json:"token_type"`
+		ExpiresIn    int    `json:"expires_in"`
+	}
+
+	if err = json.Unmarshal(body, &dropboxTokenResponse); err != nil {
+		return fmt.Errorf("error while unmarshalling response: %w", err)
+	}
+
+	integrationEntity.Details["token"] = dropboxTokenResponse.AccessToken
+	integrationEntity.Details["refresh_token"] = dropboxTokenResponse.RefreshToken
+	integrationEntity.Details["token_type"] = dropboxTokenResponse.TokenType
+	integrationEntity.Details["expires_in"] = fmt.Sprintf("%d", dropboxTokenResponse.ExpiresIn)
+
+	err = ri.syncIntegrationRepo.SetSyncIntegration(ctx, integrationEntity)
+	if err != nil {
+		return fmt.Errorf("error while setting dropbox token: %w", err)
 	}
 
 	return nil
