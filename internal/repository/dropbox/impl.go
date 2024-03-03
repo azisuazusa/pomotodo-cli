@@ -38,8 +38,17 @@ func (ri *RepoImpl) Download(ctx context.Context, integrationEntity syncintegrat
 	fileDbx := files.New(dbxCfg)
 	downloadArg := files.NewDownloadArg("/.todo-cli.db")
 	_, content, err := fileDbx.Download(downloadArg)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "expired") {
 		return fmt.Errorf("error while downloading file: %w", err)
+	}
+
+	if err != nil && strings.Contains(err.Error(), "expired") {
+		err = ri.refreshToken(ctx, integrationEntity)
+		if err != nil {
+			return fmt.Errorf("error while refreshing token: %w", err)
+		}
+
+		return ri.Download(ctx, integrationEntity)
 	}
 
 	contentBytes, err := io.ReadAll(content)
@@ -79,11 +88,20 @@ func (ri *RepoImpl) Upload(ctx context.Context, integrationEntity syncintegratio
 	uploadArg := files.NewUploadArg("/.todo-cli.db")
 	uploadArg.CommitInfo.Mode.Tag = files.WriteModeOverwrite
 	_, err = fileDbx.Upload(uploadArg, file)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "expired") {
 		return fmt.Errorf("error while uploading file: %w", err)
 	}
 
-	return nil
+	if err != nil && strings.Contains(err.Error(), "expired") {
+		err = ri.refreshToken(ctx, integrationEntity)
+		if err != nil {
+			return fmt.Errorf("error while refreshing token: %w", err)
+		}
+
+		return ri.Upload(ctx, integrationEntity)
+	}
+
+	return err
 }
 
 func (ri *RepoImpl) refreshToken(ctx context.Context, integrationEntity syncintegrationDomain.SyncIntegration) error {
