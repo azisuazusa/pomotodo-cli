@@ -39,7 +39,7 @@ func (p *Presenter) GetUncompleteTasks(ctx context.Context) error {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetTitle("Todo List:")
-	t.AppendHeader(table.Row{"#", "Name", "Description", ""})
+	t.AppendHeader(table.Row{"#", "Name", ""})
 
 	taskNumber := 1
 	for _, task := range tasks {
@@ -48,18 +48,13 @@ func (p *Presenter) GetUncompleteTasks(ctx context.Context) error {
 			isStarted = "Started"
 		}
 
-		description := task.Description
-		if len(description) > 50 {
-			description = description[:50] + "..."
-		}
-
 		if task.ParentTaskID == "" {
-			t.AppendRow(table.Row{taskNumber, task.Name, description, isStarted})
+			t.AppendRow(table.Row{taskNumber, task.Name, isStarted})
 			taskNumber++
 			continue
 		}
 
-		t.AppendRow(table.Row{"", task.Name, description, isStarted})
+		t.AppendRow(table.Row{"-", task.Name, isStarted})
 	}
 
 	t.SetStyle(table.StyleLight)
@@ -137,8 +132,15 @@ func (p *Presenter) AddSubTask(ctx context.Context) error {
 	}
 
 	views := []TaskView{}
-	for i, t := range parentTasks {
-		views = append(views, CreateTaskView(i+1, t))
+	number := 1
+	for _, t := range parentTasks {
+		if t.ParentTaskID == "" {
+			views = append(views, CreateTaskView(fmt.Sprintf("%d.", number), t))
+			number++
+			continue
+		}
+
+		views = append(views, CreateTaskView("-", t))
 	}
 
 	selectPrompt := promptui.Select{
@@ -183,8 +185,15 @@ func (p *Presenter) Start(ctx context.Context) error {
 	}
 
 	views := []TaskView{}
-	for i, task := range tasks {
-		views = append(views, CreateTaskView(i+1, task))
+	number := 1
+	for _, task := range tasks {
+		if task.ParentTaskID == "" {
+			views = append(views, CreateTaskView(fmt.Sprintf("%d.", number), task))
+			number++
+			continue
+		}
+
+		views = append(views, CreateTaskView("-", task))
 	}
 
 	selectPrompt := promptui.Select{
@@ -229,8 +238,15 @@ func (p *Presenter) Complete(ctx context.Context) error {
 	}
 
 	views := []TaskView{}
-	for i, task := range task {
-		views = append(views, CreateTaskView(i+1, task))
+	number := 1
+	for _, task := range task {
+		if task.ParentTaskID == "" {
+			views = append(views, CreateTaskView(fmt.Sprintf("%d.", number), task))
+			number++
+			continue
+		}
+
+		views = append(views, CreateTaskView("-", task))
 	}
 
 	selectPrompt := promptui.Select{
@@ -319,8 +335,15 @@ func (p *Presenter) Remove(ctx context.Context) error {
 	}
 
 	views := []TaskView{}
-	for i, task := range tasks {
-		views = append(views, CreateTaskView(i+1, task))
+	number := 1
+	for _, task := range tasks {
+		if task.ParentTaskID == "" {
+			views = append(views, CreateTaskView(fmt.Sprintf("%d.", number), task))
+			number++
+			continue
+		}
+
+		views = append(views, CreateTaskView("-", task))
 	}
 
 	selectPrompt := promptui.Select{

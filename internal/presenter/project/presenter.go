@@ -276,11 +276,22 @@ func (p *Presenter) jiraPrompt(ctx context.Context) (map[string]string, error) {
 		return nil, err
 	}
 
+	prompt = promptui.Prompt{
+		Label:   "JIRA JQL",
+		Default: "assignee = currentUser() AND resolution = Unresolved",
+	}
+
+	jql, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return nil, err
+	}
+
 	return map[string]string{
 		"url":      url,
 		"username": username,
 		"token":    token,
-		"jql":      "assignee = currentUser() AND resolution = Unresolved",
+		"jql":      jql,
 	}, nil
 }
 

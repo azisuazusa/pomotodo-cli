@@ -8,7 +8,7 @@ import (
 )
 
 func TestCreateTaskView(t *testing.T) {
-	paramNumber := 1
+	paramNumber := "1."
 	paramTask := entity.Task{
 		ID:           "task-1",
 		ProjectID:    "project-1",

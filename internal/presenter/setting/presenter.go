@@ -60,6 +60,7 @@ func (p *Presenter) SetSyncIntegration(ctx context.Context) error {
 		integration.Details["refresh_token"] = token.RefreshToken
 		integration.Details["token_type"] = token.TokenType
 		integration.Details["expires_in"] = fmt.Sprintf("%d", token.ExpiresIn)
+		fmt.Println("refresh_token: ", token.RefreshToken)
 	}
 
 	if err = p.settingUseCase.SetSyncIntegration(ctx, integration); err != nil {

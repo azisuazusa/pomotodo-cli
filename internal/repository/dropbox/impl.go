@@ -145,7 +145,7 @@ func (ri *RepoImpl) refreshToken(ctx context.Context, integrationEntity syncinte
 	}
 
 	integrationEntity.Details["token"] = dropboxTokenResponse.AccessToken
-	integrationEntity.Details["refresh_token"] = dropboxTokenResponse.RefreshToken
+	integrationEntity.Details["refresh_token"] = integrationEntity.Details["refresh_token"]
 	integrationEntity.Details["token_type"] = dropboxTokenResponse.TokenType
 	integrationEntity.Details["expires_in"] = fmt.Sprintf("%d", dropboxTokenResponse.ExpiresIn)
 

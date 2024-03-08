@@ -20,8 +20,8 @@ type TaskView struct {
 	ParentTaskID string
 }
 
-func CreateTaskView(taskNumber int, t entity.Task) TaskView {
-	taskName := fmt.Sprintf("%d. %s", taskNumber, t.Name)
+func CreateTaskView(taskNumber string, t entity.Task) TaskView {
+	taskName := fmt.Sprintf("%s %s", taskNumber, t.Name)
 	if t.IsStarted {
 		taskName = fmt.Sprintf("%s (Started)", taskName)
 	}
