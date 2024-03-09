@@ -48,13 +48,18 @@ func (p *Presenter) GetUncompleteTasks(ctx context.Context) error {
 			isStarted = "Started"
 		}
 
+		name := task.Name
+		if task.Integration.ID != "" {
+			name = fmt.Sprintf("%s (%s)", name, task.Integration.ID)
+		}
+
 		if task.ParentTaskID == "" {
-			t.AppendRow(table.Row{taskNumber, task.Name, isStarted})
+			t.AppendRow(table.Row{taskNumber, name, isStarted})
 			taskNumber++
 			continue
 		}
 
-		t.AppendRow(table.Row{"-", task.Name, isStarted})
+		t.AppendRow(table.Row{"-", name, isStarted})
 	}
 
 	t.SetStyle(table.StyleLight)
