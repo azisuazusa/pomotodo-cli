@@ -29,6 +29,6 @@ todo project add-integration
 todo setting sync-integration
 ```
 
-# TODOs
-[ ] Integrate with GitHub Issue for task synchronization
-[ ] Integrate with Slack for update status whenever with start working on a task
+## TODOs
+- [ ] Integrate with GitHub Issue for task synchronization
+- [ ] Integrate with Slack for update status whenever with start working on a task
